@@ -763,7 +763,8 @@ async function autoInitFirebase() {
   try {
     app = initializeApp(firebaseConfig, 'poker-' + Date.now());
     db = getDatabase(app);
-    await get(ref(db, '.info/connected'));
+    // .info/connected はSDKバージョンによってパスエラーになるため使わない
+    // dbが取得できれば接続準備完了とみなす
   } catch(e) {
     alert('Firebase接続エラー: ' + e.message);
   }
