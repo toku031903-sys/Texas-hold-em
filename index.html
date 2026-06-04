@@ -3,637 +3,202 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
 <meta property="og:type" content="website">
 <meta property="og:title" content="テキサスホールデム">
 <meta property="og:description" content="2〜6人で遊べるカードゲーム">
 <meta property="og:image" content="https://toku031903-sys.github.io/Texas-hold-em/IMG_0970.jpeg">
 <meta property="og:url" content="https://toku031903-sys.github.io/Texas-hold-em/">
-
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="テキサスホールデム">
 <meta name="twitter:description" content="2〜6人で遊べるカードゲーム">
 <meta name="twitter:image" content="https://toku031903-sys.github.io/Texas-hold-em/IMG_0970.jpeg">
-
 <title>🃏 Hold'em Poker</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;700&display=swap');
-
   :root {
-    --felt: #1a4a2e;
-    --felt-light: #1e5535;
-    --felt-dark: #102b1a;
-    --gold: #c9a84c;
-    --gold-light: #e8c96a;
-    --cream: #f5f0e8;
-    --card-bg: #fefcf7;
-    --red: #c0392b;
-    --black: #1a1a1a;
-    --chip-blue: #2980b9;
-    --chip-red: #c0392b;
-    --chip-green: #27ae60;
-    --text-light: #e8dcc8;
-    --shadow: rgba(0,0,0,0.5);
-    --radius: 12px;
+    --felt:#1a4a2e; --felt-light:#1e5535; --felt-dark:#102b1a;
+    --gold:#c9a84c; --gold-light:#e8c96a; --cream:#f5f0e8;
+    --card-bg:#fefcf7; --red:#c0392b; --black:#1a1a1a;
+    --text-light:#e8dcc8; --radius:12px;
   }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--felt-dark);color:var(--text-light);min-height:100dvh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at center,#1e5535 0%,#102b1a 70%,#070f09 100%);z-index:-1}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  /* LOBBY */
+  #lobby{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;padding:24px;gap:20px}
+  .logo{text-align:center;margin-bottom:8px}
+  .logo h1{font-family:'Playfair Display',serif;font-size:clamp(2.4rem,10vw,3.6rem);font-weight:900;color:var(--gold);text-shadow:0 0 30px rgba(201,168,76,.4),2px 2px 0 rgba(0,0,0,.5);letter-spacing:2px;line-height:1.1}
+  .logo p{font-family:'DM Mono',monospace;font-size:.75rem;color:rgba(201,168,76,.6);letter-spacing:4px;text-transform:uppercase;margin-top:4px}
+  .suits-row{display:flex;gap:12px;font-size:1.8rem;animation:float 3s ease-in-out infinite;margin-bottom:8px}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .card-panel{background:rgba(0,0,0,.35);border:1px solid rgba(201,168,76,.25);border-radius:var(--radius);padding:24px;width:100%;max-width:380px;backdrop-filter:blur(8px);display:flex;flex-direction:column;gap:14px}
+  .section-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:4px}
+  input[type="text"],input[type="number"]{width:100%;padding:12px 16px;background:rgba(0,0,0,.4);border:1px solid rgba(201,168,76,.3);border-radius:8px;color:var(--cream);font-size:1rem;font-family:'Noto Sans JP',sans-serif;outline:none;transition:border-color .2s}
+  input:focus{border-color:var(--gold)}
+  input::placeholder{color:rgba(245,240,232,.35)}
+  .btn{padding:14px 20px;border:none;border-radius:8px;font-size:1rem;font-family:'Noto Sans JP',sans-serif;font-weight:700;cursor:pointer;transition:all .15s;touch-action:manipulation;letter-spacing:.5px}
+  .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#1a1a1a;box-shadow:0 4px 15px rgba(201,168,76,.3)}
+  .btn-gold:active{transform:scale(.97);box-shadow:0 2px 8px rgba(201,168,76,.2)}
+  .btn-outline{background:transparent;border:1px solid rgba(201,168,76,.4);color:var(--gold)}
+  .btn-outline:active{background:rgba(201,168,76,.1)}
+  .btn-danger{background:var(--red);color:white}
+  .btn-danger:active{transform:scale(.97)}
+  .btn-sm{padding:10px 16px;font-size:.9rem}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .divider{display:flex;align-items:center;gap:10px;color:rgba(201,168,76,.4);font-size:.8rem}
+  .divider::before,.divider::after{content:'';flex:1;border-top:1px solid rgba(201,168,76,.2)}
+  .room-code-display{background:rgba(0,0,0,.5);border:1px dashed rgba(201,168,76,.5);border-radius:8px;padding:14px;text-align:center}
+  .room-code-display .code{font-family:'DM Mono',monospace;font-size:2rem;font-weight:500;color:var(--gold-light);letter-spacing:8px}
+  .player-list{display:flex;flex-direction:column;gap:8px}
+  .player-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,.3);border-radius:8px;border-left:3px solid var(--gold)}
+  .player-item .pip{font-size:1.2rem}
+  .player-item .name{flex:1;font-size:.95rem}
+  .player-item.host{border-left-color:#e8c96a}
+  .player-item .host-badge{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--gold);background:rgba(201,168,76,.15);padding:2px 6px;border-radius:4px}
+  .error-msg{color:#e74c3c;font-size:.85rem;text-align:center}
 
-  body {
-    font-family: 'Noto Sans JP', sans-serif;
-    background: var(--felt-dark);
-    color: var(--text-light);
-    min-height: 100dvh;
-    overflow-x: hidden;
-    position: relative;
-  }
+  /* GAME */
+  #game{display:none;flex-direction:column;min-height:100dvh}
+  .top-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(201,168,76,.15);position:sticky;top:0;z-index:50}
+  .top-bar .pot-info{text-align:center}
+  .top-bar .pot-label{font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:3px;color:rgba(201,168,76,.6);text-transform:uppercase}
+  .top-bar .pot-amount{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:500;color:var(--gold-light)}
+  .top-bar .phase-badge{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:2px;color:var(--cream);background:rgba(255,255,255,.08);padding:4px 10px;border-radius:20px;text-transform:uppercase}
+  .opponents-area{padding:10px 10px 4px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .opp-card{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 12px;min-width:100px;text-align:center;position:relative;transition:border-color .3s}
+  .opp-card.active-turn{border-color:var(--gold);box-shadow:0 0 12px rgba(201,168,76,.3)}
+  .opp-card.folded{opacity:.45}
+  .opp-card.all-in{border-color:#e74c3c}
+  .opp-card.winner{border-color:#27ae60;box-shadow:0 0 12px rgba(39,174,96,.4)}
+  .opp-name{font-size:.8rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;margin:0 auto}
+  .opp-chips{font-family:'DM Mono',monospace;font-size:.75rem;color:var(--gold);margin:2px 0}
+  .opp-bet{font-family:'DM Mono',monospace;font-size:.7rem;color:rgba(255,255,255,.5)}
+  .opp-status{font-size:.65rem;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+  .opp-cards{display:flex;gap:3px;justify-content:center;margin-top:6px}
+  .opp-hole{font-size:1.4rem}
+  .dealer-btn{position:absolute;top:-8px;right:-8px;background:var(--gold);color:#1a1a1a;width:20px;height:20px;border-radius:50%;font-size:.65rem;font-weight:900;display:flex;align-items:center;justify-content:center}
+  .community-area{padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+  .community-cards{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .card{width:clamp(44px,11vw,58px);aspect-ratio:2/3;background:var(--card-bg);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 3px 10px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.8);position:relative;transition:transform .2s}
+  .card.dealt{animation:dealCard .3s ease-out}
+  .card.back{background:linear-gradient(135deg,#1a3a6e,#0d2244);border:2px solid rgba(255,255,255,.1)}
+  .card.back::after{content:'🂠';font-size:clamp(1.6rem,4vw,2.2rem);opacity:.5}
+  @keyframes dealCard{from{transform:scale(.5) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+  .card-suit{font-size:clamp(1.6rem,4vw,2.2rem);line-height:1}
+  .card-rank{font-family:'Playfair Display',serif;font-size:clamp(.6rem,1.5vw,.85rem);font-weight:700;position:absolute;top:3px;left:5px}
+  .card.red .card-rank{color:var(--red)}
+  .card.black .card-rank{color:var(--black)}
+  .card.highlight{box-shadow:0 0 18px rgba(201,168,76,.8),0 0 6px rgba(201,168,76,.4),0 3px 10px rgba(0,0,0,.5);transform:translateY(-3px) scale(1.07);z-index:2}
+  .empty-card{width:clamp(44px,11vw,58px);aspect-ratio:2/3;border:1.5px dashed rgba(255,255,255,.15);border-radius:6px}
+  .hand-name{font-family:'DM Mono',monospace;font-size:.75rem;letter-spacing:2px;color:var(--gold);text-transform:uppercase;opacity:.8}
+  .hand-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(0,0,0,.45);border:1px solid rgba(201,168,76,.35);border-radius:20px;padding:4px 12px;font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold-light)}
+  .hand-badge.strong{border-color:rgba(201,168,76,.8);background:rgba(201,168,76,.12)}
+  .hand-badge .rank-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);opacity:.7}
+  .hand-badge.rank-8 .rank-dot,.hand-badge.rank-7 .rank-dot{background:#e74c3c;opacity:1}
+  .hand-badge.rank-6 .rank-dot,.hand-badge.rank-5 .rank-dot{background:#e8c96a;opacity:1}
+  .my-area{padding:10px;background:rgba(0,0,0,.3);border-top:1px solid rgba(201,168,76,.15)}
+  .my-info-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .my-name-chip{display:flex;flex-direction:column}
+  .my-name{font-weight:700;font-size:.95rem}
+  .my-chips-display{font-family:'DM Mono',monospace;font-size:1rem;color:var(--gold-light)}
+  .my-bet-display{font-family:'DM Mono',monospace;font-size:.8rem;color:rgba(255,255,255,.5)}
+  .my-cards{display:flex;gap:8px;justify-content:center;margin:10px 0}
+  .my-card{width:clamp(54px,14vw,72px);aspect-ratio:2/3;background:var(--card-bg);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 6px 20px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.8);position:relative}
+  .my-card .card-suit{font-size:clamp(2rem,5.5vw,2.8rem)}
+  .my-card .card-rank{font-size:clamp(.75rem,2vw,1rem);top:4px;left:6px}
+  .my-card.red .card-rank{color:var(--red)}
+  .my-card.black .card-rank{color:var(--black)}
+  .my-card.highlight{box-shadow:0 0 22px rgba(201,168,76,.85),0 0 8px rgba(201,168,76,.5),0 6px 20px rgba(0,0,0,.6);transform:translateY(-4px) scale(1.06);z-index:2}
 
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background: radial-gradient(ellipse at center, #1e5535 0%, #102b1a 70%, #070f09 100%);
-    z-index: -1;
-  }
+  /* ACTION AREA */
+  .action-area{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .action-row{display:flex;gap:8px}
+  .action-row .btn{flex:1}
 
-  /* ── LOBBY ── */
-  #lobby {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100dvh;
-    padding: 24px;
-    gap: 20px;
-  }
+  /* BET PANEL */
+  .bet-panel{background:rgba(0,0,0,.25);border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
 
-  .logo {
-    text-align: center;
-    margin-bottom: 8px;
-  }
-  .logo h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2.4rem, 10vw, 3.6rem);
-    font-weight: 900;
-    color: var(--gold);
-    text-shadow: 0 0 30px rgba(201,168,76,0.4), 2px 2px 0 rgba(0,0,0,0.5);
-    letter-spacing: 2px;
-    line-height: 1.1;
-  }
-  .logo p {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    color: rgba(201,168,76,0.6);
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
+  /* Quick preset buttons */
+  .quick-presets{display:flex;gap:6px}
+  .quick-presets .btn{flex:1;padding:8px 4px;font-size:.75rem;font-family:'DM Mono',monospace;letter-spacing:.5px}
 
-  .suits-row {
-    display: flex; gap: 12px; font-size: 1.8rem;
-    animation: float 3s ease-in-out infinite;
-    margin-bottom: 8px;
-  }
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  /* Fine-tune slider */
+  .finetune-row{display:flex;align-items:center;gap:8px}
+  .finetune-btn{width:32px;height:32px;border-radius:50%;border:1px solid rgba(201,168,76,.4);background:transparent;color:var(--gold);font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;touch-action:manipulation}
+  .finetune-btn:active{background:rgba(201,168,76,.15)}
+  .bet-amount-display{flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:1.3rem;font-weight:500;color:var(--gold-light);background:rgba(0,0,0,.3);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:6px 0}
 
-  .card-panel {
-    background: rgba(0,0,0,0.35);
-    border: 1px solid rgba(201,168,76,0.25);
-    border-radius: var(--radius);
-    padding: 24px;
-    width: 100%;
-    max-width: 380px;
-    backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+  /* Slider */
+  .slider-wrap{display:flex;flex-direction:column;gap:4px}
+  .slider-labels{display:flex;justify-content:space-between}
+  .slider-label-text{font-family:'DM Mono',monospace;font-size:.6rem;color:rgba(201,168,76,.45)}
+  input[type="range"]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;background:rgba(0,0,0,.4);outline:none;cursor:pointer}
+  input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;background:var(--gold-light);border:3px solid var(--felt-dark);box-shadow:0 2px 8px rgba(0,0,0,.5);margin-top:-9px;cursor:pointer}
+  input[type="range"]::-webkit-slider-runnable-track{height:6px;border-radius:3px}
+  input[type="range"]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--gold-light);border:3px solid var(--felt-dark);box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer}
+  input[type="range"]::-moz-range-track{height:6px;border-radius:3px;background:rgba(0,0,0,.4)}
 
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--gold);
-    margin-bottom: 4px;
-  }
+  /* Warning message */
+  .bet-warning{display:none;background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.4);border-radius:8px;padding:8px 12px;font-family:'DM Mono',monospace;font-size:.75rem;color:#e74c3c;text-align:center}
+  .bet-warning.show{display:block}
+  .bet-warning strong{color:#ff6b6b}
 
-  input[type="text"], input[type="number"] {
-    width: 100%;
-    padding: 12px 16px;
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 8px;
-    color: var(--cream);
-    font-size: 1rem;
-    font-family: 'Noto Sans JP', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  input:focus { border-color: var(--gold); }
-  input::placeholder { color: rgba(245,240,232,0.35); }
+  .waiting-msg{text-align:center;font-family:'DM Mono',monospace;font-size:.8rem;letter-spacing:2px;color:rgba(201,168,76,.5);padding:16px;text-transform:uppercase}
+  .waiting-msg.pulse{animation:pulse 1.5s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
 
-  .btn {
-    padding: 14px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.15s;
-    touch-action: manipulation;
-    letter-spacing: 0.5px;
-  }
-  .btn-gold {
-    background: linear-gradient(135deg, var(--gold), var(--gold-light));
-    color: #1a1a1a;
-    box-shadow: 0 4px 15px rgba(201,168,76,0.3);
-  }
-  .btn-gold:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(201,168,76,0.2); }
-  .btn-outline {
-    background: transparent;
-    border: 1px solid rgba(201,168,76,0.4);
-    color: var(--gold);
-  }
-  .btn-outline:active { background: rgba(201,168,76,0.1); }
-  .btn-danger { background: var(--red); color: white; }
-  .btn-danger:active { transform: scale(0.97); }
-  .btn-sm { padding: 10px 16px; font-size: 0.9rem; }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  /* RESULT */
+  #result-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;flex-direction:column;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+  #result-overlay.show{display:flex;animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .result-box{background:linear-gradient(135deg,#0d1f14,#1a4a2e);border:2px solid var(--gold);border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center;box-shadow:0 0 40px rgba(201,168,76,.2)}
+  .result-emoji{font-size:3rem;margin-bottom:8px}
+  .result-title{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;color:var(--gold);margin-bottom:8px}
+  .result-detail{font-size:.9rem;color:var(--text-light);line-height:1.5}
+  .result-hands{margin:16px 0}
+  .result-hand-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.85rem}
+  .result-hand-item:last-child{border-bottom:none}
+  .result-hand-item .winner-tag{font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:1px;color:#27ae60;background:rgba(39,174,96,.15);padding:2px 8px;border-radius:4px;text-transform:uppercase}
 
-  .divider {
-    display: flex; align-items: center; gap: 10px;
-    color: rgba(201,168,76,0.4); font-size: 0.8rem;
-  }
-  .divider::before, .divider::after {
-    content: ''; flex: 1;
-    border-top: 1px solid rgba(201,168,76,0.2);
-  }
+  /* LOG */
+  .action-log{padding:6px 14px;background:rgba(0,0,0,.2);border-top:1px solid rgba(255,255,255,.05);max-height:64px;overflow-y:auto}
+  .log-entry{font-family:'DM Mono',monospace;font-size:.68rem;color:rgba(245,240,232,.5);padding:2px 0}
+  .log-entry.important{color:var(--gold)}
 
-  .room-code-display {
-    background: rgba(0,0,0,0.5);
-    border: 1px dashed rgba(201,168,76,0.5);
-    border-radius: 8px;
-    padding: 14px;
-    text-align: center;
-  }
-  .room-code-display .code {
-    font-family: 'DM Mono', monospace;
-    font-size: 2rem;
-    font-weight: 500;
-    color: var(--gold-light);
-    letter-spacing: 8px;
-  }
-
-  .player-list {
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .player-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px;
-    background: rgba(0,0,0,0.3);
-    border-radius: 8px;
-    border-left: 3px solid var(--gold);
-  }
-  .player-item .pip { font-size: 1.2rem; }
-  .player-item .name { flex: 1; font-size: 0.95rem; }
-  .player-item .chips { font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--gold); }
-  .player-item.host { border-left-color: #e8c96a; }
-  .player-item .host-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem;
-    letter-spacing: 1px;
-    color: var(--gold);
-    background: rgba(201,168,76,0.15);
-    padding: 2px 6px;
-    border-radius: 4px;
-  }
-
-  .error-msg { color: #e74c3c; font-size: 0.85rem; text-align: center; }
-  .info-msg { color: var(--gold); font-size: 0.85rem; text-align: center; }
-
-  /* ── GAME ── */
-  #game { display: none; flex-direction: column; min-height: 100dvh; }
-
-  /* Top bar */
-  .top-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 14px;
-    background: rgba(0,0,0,0.4);
-    border-bottom: 1px solid rgba(201,168,76,0.15);
-    position: sticky; top: 0; z-index: 50;
-  }
-  .top-bar .pot-info {
-    text-align: center;
-  }
-  .top-bar .pot-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.6rem; letter-spacing: 3px;
-    color: rgba(201,168,76,0.6); text-transform: uppercase;
-  }
-  .top-bar .pot-amount {
-    font-family: 'DM Mono', monospace;
-    font-size: 1.2rem; font-weight: 500;
-    color: var(--gold-light);
-  }
-  .top-bar .phase-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem; letter-spacing: 2px;
-    color: var(--cream);
-    background: rgba(255,255,255,0.08);
-    padding: 4px 10px; border-radius: 20px;
-    text-transform: uppercase;
-  }
-
-  /* Opponents area */
-  .opponents-area {
-    padding: 10px 10px 4px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
-  }
-
-  .opp-card {
-    background: rgba(0,0,0,0.35);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
-    padding: 8px 12px;
-    min-width: 100px;
-    text-align: center;
-    position: relative;
-    transition: border-color 0.3s;
-  }
-  .opp-card.active-turn { border-color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.3); }
-  .opp-card.folded { opacity: 0.45; }
-  .opp-card.all-in { border-color: #e74c3c; }
-  .opp-card.winner { border-color: #27ae60; box-shadow: 0 0 12px rgba(39,174,96,0.4); }
-
-  .opp-name {
-    font-size: 0.8rem; font-weight: 700;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    max-width: 90px; margin: 0 auto;
-  }
-  .opp-chips {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem; color: var(--gold);
-    margin: 2px 0;
-  }
-  .opp-bet {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem; color: rgba(255,255,255,0.5);
-  }
-  .opp-status {
-    font-size: 0.65rem; letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .opp-cards {
-    display: flex; gap: 3px; justify-content: center; margin-top: 6px;
-  }
-  .opp-hole { font-size: 1.4rem; transition: filter 0.3s; }
-
-  .dealer-btn {
-    position: absolute; top: -8px; right: -8px;
-    background: var(--gold);
-    color: #1a1a1a;
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    font-size: 0.65rem; font-weight: 900;
-    display: flex; align-items: center; justify-content: center;
-    letter-spacing: 0;
-  }
-
-  /* Community cards */
-  .community-area {
-    padding: 12px 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .community-cards {
-    display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
-  }
-
-  .card {
-    width: clamp(44px, 11vw, 58px);
-    aspect-ratio: 2/3;
-    background: var(--card-bg);
-    border-radius: 6px;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.8);
-    position: relative;
-    transition: transform 0.2s;
-  }
-  .card.back {
-    background: linear-gradient(135deg, #1a3a6e, #0d2244);
-    border: 2px solid rgba(255,255,255,0.1);
-  }
-  .card.back::after {
-    content: '🂠';
-    font-size: clamp(1.6rem, 4vw, 2.2rem);
-    opacity: 0.5;
-  }
-  .card.dealt { animation: dealCard 0.3s ease-out; }
-  @keyframes dealCard {
-    from { transform: scale(0.5) rotate(-10deg); opacity: 0; }
-    to { transform: scale(1) rotate(0deg); opacity: 1; }
-  }
-
-  .card-suit { font-size: clamp(1.6rem, 4vw, 2.2rem); line-height: 1; }
-  .card-rank {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(0.6rem, 1.5vw, 0.85rem);
-    font-weight: 700;
-    position: absolute; top: 3px; left: 5px;
-  }
-  .card.red .card-rank { color: var(--red); }
-  .card.black .card-rank { color: var(--black); }
-
-  .empty-card {
-    width: clamp(44px, 11vw, 58px);
-    aspect-ratio: 2/3;
-    border: 1.5px dashed rgba(255,255,255,0.15);
-    border-radius: 6px;
-  }
-
-  /* Hand name display */
-  .hand-name {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem; letter-spacing: 2px;
-    color: var(--gold); text-transform: uppercase;
-    opacity: 0.8;
-  }
-
-  /* My area */
-  .my-area {
-    padding: 10px;
-    background: rgba(0,0,0,0.3);
-    border-top: 1px solid rgba(201,168,76,0.15);
-  }
-
-  .my-info-row {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .my-name-chip {
-    display: flex; flex-direction: column;
-  }
-  .my-name {
-    font-weight: 700; font-size: 0.95rem;
-  }
-  .my-chips-display {
-    font-family: 'DM Mono', monospace;
-    font-size: 1rem; color: var(--gold-light);
-  }
-  .my-bet-display {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem; color: rgba(255,255,255,0.5);
-  }
-
-  .my-cards {
-    display: flex; gap: 8px; justify-content: center; margin: 10px 0;
-  }
-  .my-card {
-    width: clamp(54px, 14vw, 72px);
-    aspect-ratio: 2/3;
-    background: var(--card-bg);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.8);
-    position: relative;
-  }
-  .my-card .card-suit { font-size: clamp(2rem, 5.5vw, 2.8rem); }
-  .my-card .card-rank {
-    font-size: clamp(0.75rem, 2vw, 1rem);
-    top: 4px; left: 6px;
-  }
-  .my-card.red .card-rank { color: var(--red); }
-  .my-card.black .card-rank { color: var(--black); }
-  .my-card.highlight {
-    box-shadow: 0 0 22px rgba(201,168,76,0.85), 0 0 8px rgba(201,168,76,0.5), 0 6px 20px rgba(0,0,0,0.6);
-    transform: translateY(-4px) scale(1.06);
-    z-index: 2;
-  }
-  .card.highlight {
-    box-shadow: 0 0 18px rgba(201,168,76,0.8), 0 0 6px rgba(201,168,76,0.4), 0 3px 10px rgba(0,0,0,0.5);
-    transform: translateY(-3px) scale(1.07);
-    z-index: 2;
-  }
-
-  /* Hand badge */
-  .hand-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(0,0,0,0.45);
-    border: 1px solid rgba(201,168,76,0.35);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--gold-light);
-    transition: all 0.3s;
-  }
-  .hand-badge.strong { border-color: rgba(201,168,76,0.8); color: var(--gold-light); background: rgba(201,168,76,0.12); }
-  .hand-badge .rank-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--gold);
-    opacity: 0.7;
-  }
-  .hand-badge.rank-8 .rank-dot, .hand-badge.rank-7 .rank-dot { background: #e74c3c; opacity: 1; }
-  .hand-badge.rank-6 .rank-dot, .hand-badge.rank-5 .rank-dot { background: #e8c96a; opacity: 1; }
-
-  /* Action buttons */
-  .action-area {
-    margin-top: 10px;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-
-  .action-row {
-    display: flex; gap: 8px;
-  }
-
-  .action-row .btn { flex: 1; }
-
-  /* Bet slider */
-  .bet-slider-area {
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .bet-slider-label {
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .bet-slider-label .label-text {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
-    color: rgba(201,168,76,0.6);
-  }
-  .bet-slider-label .slider-value {
-    font-family: 'DM Mono', monospace;
-    font-size: 1.05rem; font-weight: 500;
-    color: var(--gold-light);
-    background: rgba(0,0,0,0.3);
-    padding: 2px 12px; border-radius: 6px;
-    border: 1px solid rgba(201,168,76,0.2);
-    min-width: 80px; text-align: center;
-  }
-  input[type="range"] {
-    -webkit-appearance: none; appearance: none;
-    width: 100%; height: 6px; border-radius: 3px;
-    background: rgba(0,0,0,0.4); outline: none; cursor: pointer;
-  }
-  input[type="range"]::-webkit-slider-runnable-track {
-    height: 6px; border-radius: 3px;
-    background: linear-gradient(to right, var(--gold) var(--pct, 0%), rgba(255,255,255,0.08) var(--pct, 0%));
-  }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 24px; height: 24px; border-radius: 50%;
-    background: var(--gold-light);
-    border: 3px solid var(--felt-dark);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    margin-top: -9px; cursor: pointer;
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 24px; height: 24px; border-radius: 50%;
-    background: var(--gold-light);
-    border: 3px solid var(--felt-dark);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.5); cursor: pointer;
-  }
-  input[type="range"]::-moz-range-track {
-    height: 6px; border-radius: 3px; background: rgba(0,0,0,0.4);
-  }
-  .slider-markers {
-    display: flex; justify-content: space-between; padding: 0 2px;
-  }
-  .slider-marker {
-    font-family: 'DM Mono', monospace; font-size: 0.62rem;
-    color: rgba(201,168,76,0.45); cursor: pointer; padding: 2px 0;
-    transition: color 0.15s;
-  }
-  .slider-marker:active { color: var(--gold); }
-
-  .waiting-msg {
-    text-align: center;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    letter-spacing: 2px;
-    color: rgba(201,168,76,0.5);
-    padding: 16px;
-    text-transform: uppercase;
-  }
-  .waiting-msg.pulse {
-    animation: pulse 1.5s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
-
-  /* Result overlay */
-  #result-overlay {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.8);
-    z-index: 100;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    backdrop-filter: blur(4px);
-  }
-  #result-overlay.show { display: flex; animation: fadeIn 0.3s ease; }
-  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-
-  .result-box {
-    background: linear-gradient(135deg, #0d1f14, #1a4a2e);
-    border: 2px solid var(--gold);
-    border-radius: 16px;
-    padding: 28px 24px;
-    width: 100%; max-width: 340px;
-    text-align: center;
-    box-shadow: 0 0 40px rgba(201,168,76,0.2);
-  }
-  .result-emoji { font-size: 3rem; margin-bottom: 8px; }
-  .result-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6rem; font-weight: 900;
-    color: var(--gold);
-    margin-bottom: 8px;
-  }
-  .result-detail { font-size: 0.9rem; color: var(--text-light); line-height: 1.5; }
-  .result-hands { margin: 16px 0; }
-  .result-hand-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
-    font-size: 0.85rem;
-  }
-  .result-hand-item:last-child { border-bottom: none; }
-  .result-hand-item .winner-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem; letter-spacing: 1px;
-    color: #27ae60; background: rgba(39,174,96,0.15);
-    padding: 2px 8px; border-radius: 4px;
-    text-transform: uppercase;
-  }
-
-  /* Log */
-  .action-log {
-    padding: 6px 14px;
-    background: rgba(0,0,0,0.2);
-    border-top: 1px solid rgba(255,255,255,0.05);
-    max-height: 64px;
-    overflow-y: auto;
-  }
-  .log-entry {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    color: rgba(245,240,232,0.5);
-    padding: 2px 0;
-  }
-  .log-entry.important { color: var(--gold); }
-
-  /* Utility */
-  .hidden { display: none !important; }
+  .hidden{display:none!important}
+  ::-webkit-scrollbar{width:4px}
+  ::-webkit-scrollbar-thumb{background:rgba(201,168,76,.3);border-radius:2px}
 </style>
 </head>
 <body>
 
-<!-- ══════════════════ LOBBY ══════════════════ -->
+<!-- LOBBY -->
 <div id="lobby">
   <div class="logo">
     <div class="suits-row">♠️ ♥️ ♣️ ♦️</div>
     <h1>Hold'em</h1>
     <p>Texas Poker Online</p>
   </div>
-
   <div id="lobby-main" class="card-panel">
     <div class="section-label">プレイヤー名</div>
     <input type="text" id="player-name" placeholder="あなたの名前" maxlength="12">
-
     <div class="divider">部屋</div>
-
     <button class="btn btn-gold" onclick="createRoom()">新しい部屋を作る</button>
-
     <div class="divider">または参加</div>
-
-    <input type="text" id="join-code" placeholder="ルームコード (4桁)" maxlength="4" style="text-transform:uppercase;letter-spacing:4px;text-align:center;">
+    <input type="text" id="join-code" placeholder="ルームコード (4桁)" maxlength="4" style="text-transform:uppercase;letter-spacing:4px;text-align:center">
     <button class="btn btn-outline" onclick="joinRoom()">参加する</button>
-
     <p class="error-msg hidden" id="lobby-error"></p>
   </div>
-
-  <!-- Waiting room -->
   <div id="waiting-room" class="card-panel hidden">
     <div class="section-label">ルームコード</div>
     <div class="room-code-display">
       <div class="code" id="room-code-display">----</div>
-      <div style="font-size:0.75rem;color:rgba(201,168,76,0.5);margin-top:4px;">友達に教えよう</div>
+      <div style="font-size:.75rem;color:rgba(201,168,76,.5);margin-top:4px">友達に教えよう</div>
     </div>
-
-    <div class="section-label" style="margin-top:8px;">プレイヤー (<span id="player-count">0</span>/6)</div>
+    <div class="section-label" style="margin-top:8px">プレイヤー (<span id="player-count">0</span>/6)</div>
     <div class="player-list" id="waiting-player-list"></div>
-
-    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
       <div>
         <div class="section-label">スタートチップ</div>
         <input type="number" id="start-chips" value="1000" min="100" max="10000" step="100">
@@ -643,7 +208,6 @@
         <input type="number" id="blind-amount" value="10" min="2" max="500" step="2">
       </div>
     </div>
-
     <button class="btn btn-gold hidden" id="start-btn" onclick="startGame()">ゲームスタート！</button>
     <p class="waiting-msg pulse" id="waiting-msg">ホストがゲームを開始するまで待機中...</p>
     <button class="btn btn-outline btn-sm" onclick="leaveRoom()">退室する</button>
@@ -651,7 +215,7 @@
   </div>
 </div>
 
-<!-- ══════════════════ GAME ══════════════════ -->
+<!-- GAME -->
 <div id="game">
   <div class="top-bar">
     <div class="phase-badge" id="phase-badge">待機中</div>
@@ -659,1212 +223,948 @@
       <div class="pot-label">POT</div>
       <div class="pot-amount" id="pot-display">0</div>
     </div>
-    <button class="btn btn-outline btn-sm" onclick="leaveRoom()" style="padding:6px 10px;font-size:0.75rem;">退室</button>
+    <button class="btn btn-outline btn-sm" onclick="leaveRoom()" style="padding:6px 10px;font-size:.75rem">退室</button>
   </div>
-
   <div class="action-log" id="action-log"></div>
   <div class="opponents-area" id="opponents-area"></div>
-
   <div class="community-area">
     <div class="community-cards" id="community-cards"></div>
     <div class="hand-name" id="hand-name"></div>
   </div>
-
   <div class="my-area">
     <div class="my-info-row">
       <div class="my-name-chip">
         <div class="my-name" id="my-name-display">---</div>
         <div class="my-chips-display">🪙 <span id="my-chips">0</span></div>
       </div>
-      <div style="text-align:right;">
+      <div style="text-align:right">
         <div class="my-bet-display">ベット: <span id="my-bet">0</span></div>
-        <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);" id="my-status-display"></div>
+        <div style="font-size:.75rem;color:rgba(255,255,255,.4)" id="my-status-display"></div>
       </div>
     </div>
-
     <div class="my-cards" id="my-cards"></div>
-
     <div class="action-area" id="action-area">
       <div class="waiting-msg pulse" id="turn-waiting">他のプレイヤーのターン...</div>
-
       <div id="my-turn-actions" class="hidden">
+        <!-- メインアクション -->
         <div class="action-row">
-          <button class="btn btn-danger btn-sm" id="fold-btn" onclick="playerAction('fold')">フォールド</button>
+          <button class="btn btn-danger btn-sm" onclick="playerAction('fold')">フォールド</button>
           <button class="btn btn-outline btn-sm" id="check-btn" onclick="playerAction('check')">チェック</button>
           <button class="btn btn-gold btn-sm" id="call-btn" onclick="playerAction('call')">コール</button>
         </div>
-        <div class="bet-slider-area" id="bet-slider-area">
-          <div class="bet-slider-label">
-            <span class="label-text">レイズ額</span>
-            <span class="slider-value" id="slider-value-display">--</span>
+        <!-- ベットパネル -->
+        <div class="bet-panel">
+          <!-- クイックプリセット -->
+          <div class="quick-presets">
+            <button class="btn btn-outline" onclick="setPreset('min')">MIN</button>
+            <button class="btn btn-outline" onclick="setPreset(0.33)">1/3P</button>
+            <button class="btn btn-outline" onclick="setPreset(0.5)">½P</button>
+            <button class="btn btn-outline" onclick="setPreset(1)">POT</button>
+            <button class="btn btn-outline" onclick="setPreset('allin')">ALL IN</button>
           </div>
-          <input type="range" id="raise-slider" min="0" max="1000" value="0"
-            oninput="onSliderInput(this)" ontouchstart="onSliderInput(this)">
-          <div class="slider-markers">
-            <span class="slider-marker" onclick="setSliderPreset('min')">MIN</span>
-            <span class="slider-marker" onclick="setSliderPreset(0.33)">1/3P</span>
-            <span class="slider-marker" onclick="setSliderPreset(0.5)">HALF</span>
-            <span class="slider-marker" onclick="setSliderPreset(1)">POT</span>
-            <span class="slider-marker" onclick="setSliderPreset(999)">ALL IN</span>
+          <!-- スライダー -->
+          <div class="slider-wrap">
+            <input type="range" id="raise-slider" min="0" max="1000" value="0" oninput="onSlider(this)">
+            <div class="slider-labels">
+              <span class="slider-label-text" id="slider-min-label">MIN</span>
+              <span class="slider-label-text" id="slider-max-label">ALL IN</span>
+            </div>
           </div>
-        </div>
-        <input type="hidden" id="raise-input">
-        <div class="action-row">
-          <button class="btn btn-gold" id="raise-btn" onclick="playerAction('raise')">レイズ ↑</button>
+          <!-- 金額表示 + 微調整 -->
+          <div class="finetune-row">
+            <button class="finetune-btn" onclick="adjustBet(-1)">－</button>
+            <div class="bet-amount-display" id="bet-amount-display">0</div>
+            <button class="finetune-btn" onclick="adjustBet(1)">＋</button>
+          </div>
+          <!-- 警告メッセージ -->
+          <div class="bet-warning" id="bet-warning"></div>
+          <!-- レイズ実行 -->
+          <div class="action-row">
+            <button class="btn btn-gold" onclick="playerAction('raise')">レイズ / ベット ↑</button>
+          </div>
         </div>
       </div>
-
-      <div id="host-next-round" class="hidden" style="margin-top:8px;">
+      <div id="host-next-round" class="hidden" style="margin-top:8px">
         <button class="btn btn-gold" onclick="startNextRound()">次のラウンドへ ▶</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════ RESULT OVERLAY ══════════════════ -->
+<!-- RESULT -->
 <div id="result-overlay">
   <div class="result-box">
     <div class="result-emoji" id="result-emoji">🏆</div>
     <div class="result-title" id="result-title">勝利！</div>
     <div class="result-detail" id="result-detail"></div>
     <div class="result-hands" id="result-hands"></div>
-    <button class="btn btn-gold" onclick="closeResult()" style="margin-top:12px;width:100%;">OK</button>
+    <button class="btn btn-gold" onclick="closeResult()" style="margin-top:12px;width:100%">OK</button>
   </div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getDatabase, ref, set, get, update, onValue, off, push, serverTimestamp, runTransaction
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getDatabase, ref, set, get, update, onValue, off, serverTimestamp, runTransaction }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// ─────── STATE ───────
-let db = null, app = null;
-let myId = null, myName = '', roomCode = '';
-let isHost = false;
-let roomRef = null, unsubscribe = null, unsubHand = null;
-let gameState = null;
-let myHand = null;
+// ── STATE ──
+let db=null, app=null;
+let myId=null, myName='', roomCode='';
+let isHost=false;
+let roomRef=null, unsubscribe=null, unsubHand=null;
+let gameState=null, myHand=null;
 
-// ─────── FIREBASE INIT ───────
+// bet UI state
+let betMin=0, betMax=1000, betStep=10, currentBetVal=0;
+
+// ── FIREBASE ──
 const firebaseConfig = {
-  apiKey: "AIzaSyB22WRfHeb6XHMRae3dTsSv1VWTnr6_TWs",
-  authDomain: "texas-hold--em-4d88d.firebaseapp.com",
-  databaseURL: "https://texas-hold--em-4d88d-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "texas-hold--em-4d88d",
-  storageBucket: "texas-hold--em-4d88d.firebasestorage.app",
-  messagingSenderId: "248222039015",
-  appId: "1:248222039015:web:727f0d5dcbe73e4543db42",
-  measurementId: "G-Q8QXSGE4T0"
+  apiKey:"AIzaSyB22WRfHeb6XHMRae3dTsSv1VWTnr6_TWs",
+  authDomain:"texas-hold--em-4d88d.firebaseapp.com",
+  databaseURL:"https://texas-hold--em-4d88d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"texas-hold--em-4d88d",
+  storageBucket:"texas-hold--em-4d88d.firebasestorage.app",
+  messagingSenderId:"248222039015",
+  appId:"1:248222039015:web:727f0d5dcbe73e4543db42"
 };
-
-async function autoInitFirebase() {
+(async()=>{
   try {
-    app = initializeApp(firebaseConfig, 'poker-' + Date.now());
+    app = initializeApp(firebaseConfig,'poker-'+Date.now());
     db = getDatabase(app);
-    // .info/connected はSDKバージョンによってパスエラーになるため使わない
-    // dbが取得できれば接続準備完了とみなす
-  } catch(e) {
-    alert('Firebase接続エラー: ' + e.message);
-  }
-}
-autoInitFirebase();
+  } catch(e){ alert('Firebase接続エラー: '+e.message); }
+})();
 
-// ─────── ROOM ───────
-window.createRoom = async () => {
-  const name = document.getElementById('player-name').value.trim();
-  if (!name) { showLobbyError('名前を入力してください'); return; }
-  myName = name;
-  myId = 'p_' + Math.random().toString(36).slice(2, 9);
-  isHost = true;
-
-  // [FIX #9] ルームコード衝突チェック付き生成
+// ── ROOM ──
+window.createRoom = async()=>{
+  const name=document.getElementById('player-name').value.trim();
+  if(!name){showLobbyError('名前を入力してください');return;}
+  myName=name; myId='p_'+Math.random().toString(36).slice(2,9); isHost=true;
   roomCode = await genUniqueCode();
-
-  roomRef = ref(db, 'rooms/' + roomCode);
-  await set(roomRef, {
-    host: myId,
-    phase: 'waiting',
-    players: {
-      [myId]: { name: myName, chips: 1000, bet: 0, status: 'active', seat: 0, isHost: true }
-    },
-    created: serverTimestamp()
-  });
-
-  subscribeRoom();
-  showWaitingRoom();
+  roomRef=ref(db,'rooms/'+roomCode);
+  await set(roomRef,{host:myId,phase:'waiting',players:{[myId]:{name:myName,chips:1000,bet:0,status:'active',seat:0,isHost:true}},created:serverTimestamp()});
+  subscribeRoom(); showWaitingRoom();
 };
 
-window.joinRoom = async () => {
-  const name = document.getElementById('player-name').value.trim();
-  const code = document.getElementById('join-code').value.trim().toUpperCase();
-  if (!name) { showLobbyError('名前を入力してください'); return; }
-  if (!code || code.length !== 4) { showLobbyError('4桁のコードを入力してください'); return; }
-
-  myName = name;
-  myId = 'p_' + Math.random().toString(36).slice(2, 9);
-  isHost = false;
-  roomCode = code;
-
-  roomRef = ref(db, 'rooms/' + roomCode);
-  const snap = await get(roomRef);
-  if (!snap.exists()) { showLobbyError('部屋が見つかりません'); return; }
-  const data = snap.val();
-  if (data.phase !== 'waiting') { showLobbyError('すでにゲームが始まっています'); return; }
-  const activePlayers = Object.values(data.players || {}).filter(p => p.status !== 'left');
-  if (activePlayers.length >= 6) { showLobbyError('部屋が満員です (最大6人)'); return; }
-
-  const seat = Object.keys(data.players || {}).length;
-  await update(ref(db, `rooms/${roomCode}/players/${myId}`), {
-    name: myName, chips: data.startChips || 1000, bet: 0, status: 'active', seat
-  });
-
-  subscribeRoom();
-  showWaitingRoom();
+window.joinRoom = async()=>{
+  const name=document.getElementById('player-name').value.trim();
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  if(!name){showLobbyError('名前を入力してください');return;}
+  if(!code||code.length!==4){showLobbyError('4桁のコードを入力してください');return;}
+  myName=name; myId='p_'+Math.random().toString(36).slice(2,9); isHost=false; roomCode=code;
+  const snap=await get(ref(db,'rooms/'+roomCode));
+  if(!snap.exists()){showLobbyError('部屋が見つかりません');return;}
+  const data=snap.val();
+  if(data.phase!=='waiting'){showLobbyError('すでにゲームが始まっています');return;}
+  const active=Object.values(data.players||{}).filter(p=>p.status!=='left');
+  if(active.length>=6){showLobbyError('部屋が満員です (最大6人)');return;}
+  const seat=Object.keys(data.players||{}).length;
+  await update(ref(db,`rooms/${roomCode}/players/${myId}`),{name:myName,chips:data.startChips||1000,bet:0,status:'active',seat});
+  subscribeRoom(); showWaitingRoom();
 };
 
-window.leaveRoom = async () => {
-  if (roomRef && myId) {
-    try {
-      // [FIX #10] ホストが退室する場合は別のプレイヤーにホストを引き継ぐ
-      if (isHost) {
-        const snap = await get(ref(db, `rooms/${roomCode}/players`));
-        const players = snap.val() || {};
-        const others = Object.keys(players).filter(id => id !== myId && players[id].status !== 'left');
-        if (others.length > 0) {
-          const newHost = others[0];
-          await update(ref(db, `rooms/${roomCode}`), { host: newHost });
-          await update(ref(db, `rooms/${roomCode}/players/${newHost}`), { isHost: true });
+window.leaveRoom = async()=>{
+  if(roomRef&&myId){
+    try{
+      if(isHost){
+        const snap=await get(ref(db,`rooms/${roomCode}/players`));
+        const players=snap.val()||{};
+        const others=Object.keys(players).filter(id=>id!==myId&&players[id].status!=='left');
+        if(others.length>0){
+          await update(ref(db,`rooms/${roomCode}`),{host:others[0]});
+          await update(ref(db,`rooms/${roomCode}/players/${others[0]}`),{isHost:true});
         }
       }
-      await update(ref(db, `rooms/${roomCode}/players/${myId}`), { status: 'left' });
-    } catch(e){}
+      await update(ref(db,`rooms/${roomCode}/players/${myId}`),{status:'left'});
+    }catch(e){}
   }
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-  if (unsubHand) { unsubHand(); unsubHand = null; }
+  if(unsubscribe){unsubscribe();unsubscribe=null;}
+  if(unsubHand){unsubHand();unsubHand=null;}
   location.reload();
 };
 
-window.startGame = async () => {
-  if (!isHost) return;
-  const startChips = parseInt(document.getElementById('start-chips').value) || 1000;
-  const blind = parseInt(document.getElementById('blind-amount').value) || 10;
-
-  const snap = await get(ref(db, `rooms/${roomCode}/players`));
-  const players = snap.val();
-  const ids = Object.keys(players).filter(id => players[id].status !== 'left');
-  if (ids.length < 2) { showWaitingError('最低2人必要です'); return; }
-
-  const updates = {};
-  ids.forEach((id, i) => {
-    updates[`rooms/${roomCode}/players/${id}/chips`] = startChips;
-    updates[`rooms/${roomCode}/players/${id}/seat`] = i;
-    updates[`rooms/${roomCode}/players/${id}/status`] = 'active';
+window.startGame = async()=>{
+  if(!isHost)return;
+  const startChips=parseInt(document.getElementById('start-chips').value)||1000;
+  const blind=parseInt(document.getElementById('blind-amount').value)||10;
+  const snap=await get(ref(db,`rooms/${roomCode}/players`));
+  const players=snap.val();
+  const ids=Object.keys(players).filter(id=>players[id].status!=='left');
+  if(ids.length<2){showWaitingError('最低2人必要です');return;}
+  const updates={};
+  ids.forEach((id,i)=>{
+    updates[`rooms/${roomCode}/players/${id}/chips`]=startChips;
+    updates[`rooms/${roomCode}/players/${id}/seat`]=i;
+    updates[`rooms/${roomCode}/players/${id}/status`]='active';
   });
-  updates[`rooms/${roomCode}/startChips`] = startChips;
-  updates[`rooms/${roomCode}/blind`] = blind;
-  await update(ref(db), updates);
-
+  updates[`rooms/${roomCode}/startChips`]=startChips;
+  updates[`rooms/${roomCode}/blind`]=blind;
+  await update(ref(db),updates);
   await dealRound(0);
 };
 
-window.startNextRound = async () => {
-  if (!isHost) return;
-  const snap = await get(ref(db, `rooms/${roomCode}`));
-  const data = snap.val();
-
-  // [FIX #1] ラウンド開始の重複実行防止：lockを使ってホストだけが一度だけ実行
-  const lockRef = ref(db, `rooms/${roomCode}/roundLock`);
-  let acquired = false;
-  await runTransaction(lockRef, (current) => {
-    if (current === null || current === false) {
-      acquired = true;
-      return true; // lock取得
-    }
-    return; // abort
-  });
-  if (!acquired) return; // 他が先に取得済み
-
-  const prevDealer = data.dealerIndex ?? 0;
-  const players = data.players;
-  const activeIds = Object.keys(players)
-    .filter(id => players[id].status !== 'left' && players[id].status !== 'eliminated' && players[id].chips > 0)
-    .sort((a, b) => players[a].seat - players[b].seat);
-  if (activeIds.length < 2) {
-    addLog('チップが足りるプレイヤーが2人未満です', true);
-    await update(ref(db, `rooms/${roomCode}`), { roundLock: false });
+window.startNextRound = async()=>{
+  if(!isHost)return;
+  // ロックで二重実行防止
+  const lockRef=ref(db,`rooms/${roomCode}/roundLock`);
+  let acquired=false;
+  await runTransaction(lockRef,cur=>{
+    if(cur===null||cur===false){acquired=true;return true;}
     return;
-  }
-  const nextDealer = (prevDealer + 1) % activeIds.length;
-  await set(ref(db, `rooms/${roomCode}/showdownHands`), null);
+  });
+  if(!acquired)return;
+
+  const snap=await get(ref(db,`rooms/${roomCode}`));
+  const data=snap.val();
+  const players=data.players;
+  const activeIds=Object.keys(players)
+    .filter(id=>players[id].status!=='left'&&players[id].status!=='eliminated'&&players[id].chips>0)
+    .sort((a,b)=>players[a].seat-players[b].seat);
+  if(activeIds.length<2){addLog('チップが足りるプレイヤーが2人未満です',true);await update(ref(db,`rooms/${roomCode}`),{roundLock:false});return;}
+  const nextDealer=((data.dealerIndex??0)+1)%activeIds.length;
+  await set(ref(db,`rooms/${roomCode}/showdownHands`),null);
   await dealRound(nextDealer);
-  // lockはdealRoundの書き込みで上書きされるのでリセット不要
 };
 
-// ─────── DEAL ───────
-async function dealRound(dealerIdx) {
-  const snap = await get(ref(db, `rooms/${roomCode}`));
-  const data = snap.val();
-  const blind = data.blind || 10;
-  const players = data.players;
+// ── DEAL ──
+async function dealRound(dealerIdx){
+  const snap=await get(ref(db,`rooms/${roomCode}`));
+  const data=snap.val();
+  const blind=data.blind||10;
+  const players=data.players;
+  const activeIds=Object.keys(players)
+    .filter(id=>players[id].status!=='left'&&players[id].status!=='eliminated'&&players[id].chips>0)
+    .sort((a,b)=>players[a].seat-players[b].seat);
+  const n=activeIds.length;
+  const dealerSeat=dealerIdx%n;
+  const sbSeat=n===2?dealerSeat:(dealerSeat+1)%n;
+  const bbSeat=n===2?(dealerSeat+1)%n:(dealerSeat+2)%n;
 
-  const activeIds = Object.keys(players)
-    .filter(id => players[id].status !== 'left' && players[id].status !== 'eliminated' && players[id].chips > 0)
-    .sort((a, b) => players[a].seat - players[b].seat);
+  const deck=shuffleDeck();
+  const hands={};
+  activeIds.forEach(id=>{ hands[id]=[deck.shift(),deck.shift()]; });
 
-  const n = activeIds.length;
-  const dealerSeat = dealerIdx % n;
-
-  // ヘッズアップ(2人)の場合はSB=ディーラー
-  const sbSeat = n === 2 ? dealerSeat : (dealerSeat + 1) % n;
-  const bbSeat = n === 2 ? (dealerSeat + 1) % n : (dealerSeat + 2) % n;
-
-  const deck = shuffleDeck();
-  const hands = {};
-  activeIds.forEach(id => {
-    hands[id] = [deck.shift(), deck.shift()];
+  const newPlayers={};
+  let potFromBlinds=0;
+  activeIds.forEach((id,i)=>{
+    let chips=players[id].chips, bet=0, status='active';
+    if(i===sbSeat){ const sb=Math.min(Math.floor(blind/2),chips); bet=sb;chips-=sb;potFromBlinds+=sb; }
+    if(i===bbSeat){ const bb=Math.min(blind,chips); bet=bb;chips-=bb;potFromBlinds+=bb; }
+    if(chips===0)status='allin';
+    const{hand:_h,...rest}=players[id];
+    newPlayers[id]={...rest,chips,bet,status};
+  });
+  Object.keys(players).forEach(id=>{
+    if(!newPlayers[id]){const{hand:_h,...rest}=players[id];newPlayers[id]={...rest,status:players[id].status};}
   });
 
-  const newPlayers = {};
-  let potFromBlinds = 0;
-  activeIds.forEach((id, i) => {
-    let chips = players[id].chips;
-    let bet = 0;
-    let status = 'active';
-    if (i === sbSeat) {
-      const sbAmount = Math.min(Math.floor(blind / 2), chips);
-      bet = sbAmount; chips -= sbAmount; potFromBlinds += sbAmount;
-    }
-    if (i === bbSeat) {
-      const bbAmount = Math.min(blind, chips);
-      bet = bbAmount; chips -= bbAmount; potFromBlinds += bbAmount;
-    }
-    if (chips === 0) status = 'allin';
-    const { hand: _h, ...rest } = players[id];
-    newPlayers[id] = { ...rest, chips, bet, status };
-  });
+  const handUpdates={};
+  activeIds.forEach(id=>{ handUpdates[`rooms/${roomCode}/hands/${id}`]=hands[id]; });
+  await update(ref(db),handUpdates);
 
-  Object.keys(players).forEach(id => {
-    if (!newPlayers[id]) {
-      const { hand: _h, ...rest } = players[id];
-      newPlayers[id] = { ...rest, status: players[id].status };
-    }
-  });
-
-  const handUpdates = {};
-  activeIds.forEach(id => {
-    handUpdates[`rooms/${roomCode}/hands/${id}`] = hands[id];
-  });
-  await update(ref(db), handUpdates);
-
-  // [FIX #3] プリフロップのファーストアクターはBBの次
-  // BBがすでにコール済みとして扱い、BBはラウンド終了時にオプションを持つ
-  // firstActorはBBの次から開始
-  const firstActor = (bbSeat + 1) % n;
-  // スキップ（allin等）
-  let fa = firstActor;
-  for (let i = 0; i < n; i++) {
-    const pid = activeIds[fa];
-    if (newPlayers[pid]?.status === 'active') break;
-    fa = (fa + 1) % n;
+  // ファーストアクター: BBの次、スキップしてactiveを探す
+  let fa=(bbSeat+1)%n;
+  for(let i=0;i<n;i++){
+    if(newPlayers[activeIds[fa]]?.status==='active')break;
+    fa=(fa+1)%n;
   }
 
-  const roomUpdate = {
-    phase: 'preflop',
-    players: newPlayers,
-    deck: deck,
-    community: [],
-    pot: potFromBlinds,
-    currentBet: blind,
-    lastRaiseSize: blind,   // [FIX #6] 最小レイズ幅を追跡
-    dealerIndex: dealerSeat,
-    sbIndex: sbSeat,
-    bbIndex: bbSeat,
-    turnIndex: fa,
-    turnOrder: activeIds,
-    // [FIX #3] BBオプション用フラグ: preflopではBBがまだオプションを持つ
-    bbHasOption: true,
-    log: [],
-    roundLock: false,
-  };
-
-  await set(ref(db, `rooms/${roomCode}`), { ...data, ...roomUpdate });
+  await set(ref(db,`rooms/${roomCode}`),{
+    ...data,
+    phase:'preflop', players:newPlayers, deck, community:[],
+    pot:potFromBlinds, currentBet:blind, lastRaiseSize:blind,
+    dealerIndex:dealerSeat, sbIndex:sbSeat, bbIndex:bbSeat,
+    turnIndex:fa, turnOrder:activeIds,
+    bbHasOption:true, log:[], roundLock:false,
+  });
   await addLogDB(`新ラウンド開始 — ディーラー: ${players[activeIds[dealerSeat]].name}`);
   await addLogDB(`SB: ${players[activeIds[sbSeat]].name} (${Math.floor(blind/2)}), BB: ${players[activeIds[bbSeat]].name} (${blind})`);
 }
 
-// ─────── SUBSCRIBE ───────
-function subscribeRoom() {
-  if (unsubscribe) unsubscribe();
-  if (unsubHand) unsubHand();
-
-  const r = ref(db, 'rooms/' + roomCode);
-  const handler = onValue(r, snap => {
-    if (!snap.exists()) return;
-    gameState = snap.val();
-
-    // [FIX #10] ホスト引き継ぎ検知
-    if (gameState.host === myId && !isHost) {
-      isHost = true;
-    }
-
-    // ショーダウン時は公開された手札を注入
-    if (gameState.showdownHands) {
-      Object.entries(gameState.showdownHands).forEach(([id, hand]) => {
-        if (gameState.players?.[id]) gameState.players[id].hand = hand;
+// ── SUBSCRIBE ──
+function subscribeRoom(){
+  if(unsubscribe)unsubscribe();
+  if(unsubHand)unsubHand();
+  const r=ref(db,'rooms/'+roomCode);
+  const handler=onValue(r,snap=>{
+    if(!snap.exists())return;
+    gameState=snap.val();
+    if(gameState.host===myId&&!isHost)isHost=true;
+    if(gameState.showdownHands){
+      Object.entries(gameState.showdownHands).forEach(([id,hand])=>{
+        if(gameState.players?.[id])gameState.players[id].hand=hand;
       });
     }
-
-    if (myHand && gameState.players?.[myId]) {
-      gameState.players[myId].hand = myHand;
-    }
+    if(myHand&&gameState.players?.[myId])gameState.players[myId].hand=myHand;
     renderGame(gameState);
   });
-  unsubscribe = () => off(r, 'value', handler);
-
-  const handRef = ref(db, `rooms/${roomCode}/hands/${myId}`);
-  const handHandler = onValue(handRef, snap => {
-    if (!snap.exists()) return;
-    myHand = snap.val();
-    if (gameState?.players?.[myId]) {
-      gameState.players[myId].hand = myHand;
-      renderGame(gameState);
-    }
+  unsubscribe=()=>off(r,'value',handler);
+  const hr=ref(db,`rooms/${roomCode}/hands/${myId}`);
+  const hh=onValue(hr,snap=>{
+    if(!snap.exists())return;
+    myHand=snap.val();
+    if(gameState?.players?.[myId]){gameState.players[myId].hand=myHand;renderGame(gameState);}
   });
-  unsubHand = () => off(handRef, 'value', handHandler);
+  unsubHand=()=>off(hr,'value',hh);
 }
 
-// ─────── RENDER ───────
-function renderGame(state) {
-  const phase = state.phase;
-  if (phase === 'waiting') { renderWaiting(state); return; }
-
-  document.getElementById('lobby').style.display = 'none';
-  document.getElementById('game').style.display = 'flex';
-  document.getElementById('game').style.flexDirection = 'column';
-
-  document.getElementById('phase-badge').textContent = phaseLabel(phase);
-  document.getElementById('pot-display').textContent = '🪙' + (state.pot || 0);
-
+// ── RENDER ──
+function renderGame(state){
+  const phase=state.phase;
+  if(phase==='waiting'){renderWaiting(state);return;}
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('game').style.display='flex';
+  document.getElementById('game').style.flexDirection='column';
+  document.getElementById('phase-badge').textContent=phaseLabel(phase);
+  document.getElementById('pot-display').textContent='🪙'+(state.pot||0);
   renderOpponents(state);
   renderCommunity(state);
   renderMyArea(state);
   renderActions(state);
   renderLog(state);
-
-  if (phase === 'showdown' || phase === 'tournament_end') renderResult(state);
+  if(phase==='showdown'||phase==='tournament_end')renderResult(state);
 }
 
-function renderWaiting(state) {
-  document.getElementById('lobby').style.display = '';
-  document.getElementById('game').style.display = 'none';
+function renderWaiting(state){
+  document.getElementById('lobby').style.display='';
+  document.getElementById('game').style.display='none';
   showWaitingRoom();
-
-  const players = state.players || {};
-  const ids = Object.keys(players).filter(id => players[id].status !== 'left');
-  document.getElementById('player-count').textContent = ids.length;
-
-  const list = document.getElementById('waiting-player-list');
-  list.innerHTML = '';
-  ids.sort((a, b) => (players[a].seat || 0) - (players[b].seat || 0)).forEach(id => {
-    const p = players[id];
-    const div = document.createElement('div');
-    div.className = 'player-item' + (id === state.host ? ' host' : '');
-    div.innerHTML = `
-      <span class="pip">${id === state.host ? '👑' : '👤'}</span>
-      <span class="name">${esc(p.name)}</span>
-      ${id === state.host ? '<span class="host-badge">HOST</span>' : ''}
-    `;
+  const players=state.players||{};
+  const ids=Object.keys(players).filter(id=>players[id].status!=='left');
+  document.getElementById('player-count').textContent=ids.length;
+  const list=document.getElementById('waiting-player-list');
+  list.innerHTML='';
+  ids.sort((a,b)=>(players[a].seat||0)-(players[b].seat||0)).forEach(id=>{
+    const p=players[id];
+    const div=document.createElement('div');
+    div.className='player-item'+(id===state.host?' host':'');
+    div.innerHTML=`<span class="pip">${id===state.host?'👑':'👤'}</span><span class="name">${esc(p.name)}</span>${id===state.host?'<span class="host-badge">HOST</span>':''}`;
     list.appendChild(div);
   });
-
-  if (isHost) {
-    document.getElementById('start-btn').classList.remove('hidden');
-    document.getElementById('waiting-msg').classList.add('hidden');
-  } else {
-    document.getElementById('start-btn').classList.add('hidden');
-    document.getElementById('waiting-msg').classList.remove('hidden');
-  }
+  if(isHost){document.getElementById('start-btn').classList.remove('hidden');document.getElementById('waiting-msg').classList.add('hidden');}
+  else{document.getElementById('start-btn').classList.add('hidden');document.getElementById('waiting-msg').classList.remove('hidden');}
 }
 
-function renderOpponents(state) {
-  const players = state.players || {};
-  const turnOrder = state.turnOrder || [];
-  const turnIndex = state.turnIndex ?? -1;
-  const dealerIndex = state.dealerIndex ?? 0;
-  const area = document.getElementById('opponents-area');
-  area.innerHTML = '';
-
-  turnOrder.forEach((id, i) => {
-    if (id === myId) return;
-    const p = players[id];
-    if (!p || p.status === 'left') return;
-    const isActive = i === turnIndex;
-    const isDealer = i === dealerIndex;
-    const folded = p.status === 'folded';
-    const allIn = p.status === 'allin';
-    const won = p.status === 'winner';
-
-    const div = document.createElement('div');
-    div.className = 'opp-card' +
-      (isActive ? ' active-turn' : '') +
-      (folded ? ' folded' : '') +
-      (allIn ? ' all-in' : '') +
-      (won ? ' winner' : '');
-
-    const holeHtml = (state.phase === 'showdown' && p.hand)
-      ? p.hand.map(c => `<span class="opp-hole">${cardEmoji(c)}</span>`).join('')
-      : '<span class="opp-hole">🂠</span><span class="opp-hole">🂠</span>';
-
-    div.innerHTML = `
-      ${isDealer ? '<div class="dealer-btn">D</div>' : ''}
-      <div class="opp-name">${esc(p.name)}</div>
-      <div class="opp-chips">🪙${p.chips}</div>
-      ${p.bet > 0 ? `<div class="opp-bet">bet: ${p.bet}</div>` : ''}
-      <div class="opp-status">${statusLabel(p.status, state.phase)}</div>
-      <div class="opp-cards">${holeHtml}</div>
-    `;
+function renderOpponents(state){
+  const players=state.players||{}, turnOrder=state.turnOrder||[];
+  const turnIndex=state.turnIndex??-1, dealerIndex=state.dealerIndex??0;
+  const area=document.getElementById('opponents-area');
+  area.innerHTML='';
+  turnOrder.forEach((id,i)=>{
+    if(id===myId)return;
+    const p=players[id];
+    if(!p||p.status==='left')return;
+    const div=document.createElement('div');
+    div.className='opp-card'+(i===turnIndex?' active-turn':'')+(p.status==='folded'?' folded':'')+(p.status==='allin'?' all-in':'')+(p.status==='winner'?' winner':'');
+    const holeHtml=(state.phase==='showdown'&&p.hand)?p.hand.map(c=>`<span class="opp-hole">${cardEmoji(c)}</span>`).join(''):'<span class="opp-hole">🂠</span><span class="opp-hole">🂠</span>';
+    div.innerHTML=`${i===dealerIndex?'<div class="dealer-btn">D</div>':''}<div class="opp-name">${esc(p.name)}</div><div class="opp-chips">🪙${p.chips}</div>${p.bet>0?`<div class="opp-bet">bet: ${p.bet}</div>`:''}<div class="opp-status">${statusLabel(p.status,state.phase)}</div><div class="opp-cards">${holeHtml}</div>`;
     area.appendChild(div);
   });
 }
 
-function renderCommunity(state) {
-  const comm = state.community || [];
-  const me = state.players?.[myId];
-  let usedSet = new Set();
-  let best = null;
-
-  if (me?.hand && comm.length >= 2) {
-    const allCards = [...me.hand, ...comm];
-    best = evaluateHand(allCards);
-    usedSet = best.usedIndices || new Set();
+function renderCommunity(state){
+  const comm=state.community||[], me=state.players?.[myId];
+  let usedSet=new Set(), best=null;
+  if(me?.hand&&comm.length>=2){best=evaluateHand([...me.hand,...comm]);usedSet=best.usedIndices||new Set();}
+  const area=document.getElementById('community-cards');
+  area.innerHTML='';
+  for(let i=0;i<5;i++){
+    if(comm[i])area.appendChild(buildCardEl(comm[i],true,usedSet.has(2+i)));
+    else{const e=document.createElement('div');e.className='empty-card';area.appendChild(e);}
   }
-
-  const area = document.getElementById('community-cards');
-  area.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
-    if (comm[i]) {
-      const isUsed = usedSet.has(2 + i);
-      area.appendChild(buildCardEl(comm[i], true, isUsed));
-    } else {
-      const empty = document.createElement('div');
-      empty.className = 'empty-card';
-      area.appendChild(empty);
-    }
-  }
-
-  const badgeEl = document.getElementById('hand-name');
-  if (best && me?.hand) {
-    const strong = best.rank >= 3;
-    badgeEl.innerHTML = `<span class="hand-badge rank-${best.rank}${strong?' strong':''}">`
-      + `<span class="rank-dot"></span>${best.name}</span>`;
-  } else {
-    badgeEl.innerHTML = '';
-  }
+  const badgeEl=document.getElementById('hand-name');
+  if(best&&me?.hand){
+    const strong=best.rank>=3;
+    badgeEl.innerHTML=`<span class="hand-badge rank-${best.rank}${strong?' strong':''}"><span class="rank-dot"></span>${best.name}</span>`;
+  }else badgeEl.innerHTML='';
 }
 
-function renderMyArea(state) {
-  const me = state.players?.[myId];
-  if (!me) return;
-  document.getElementById('my-name-display').textContent = myName;
-  document.getElementById('my-chips').textContent = me.chips;
-  document.getElementById('my-bet').textContent = me.bet || 0;
-  document.getElementById('my-status-display').textContent = statusLabel(me.status, state.phase);
-
-  const comm = state.community || [];
-  let usedSet = new Set();
-  if (me.hand && comm.length >= 2) {
-    const best = evaluateHand([...me.hand, ...comm]);
-    usedSet = best.usedIndices || new Set();
-  } else if (me.hand) {
-    usedSet = new Set([0, 1]);
-  }
-
-  const cardsEl = document.getElementById('my-cards');
-  cardsEl.innerHTML = '';
-  if (me.hand) {
-    me.hand.forEach((c, i) => {
-      cardsEl.appendChild(buildMyCardEl(c, usedSet.has(i)));
-    });
-  }
+function renderMyArea(state){
+  const me=state.players?.[myId];
+  if(!me)return;
+  document.getElementById('my-name-display').textContent=myName;
+  document.getElementById('my-chips').textContent=me.chips;
+  document.getElementById('my-bet').textContent=me.bet||0;
+  document.getElementById('my-status-display').textContent=statusLabel(me.status,state.phase);
+  const comm=state.community||[];
+  let usedSet=new Set();
+  if(me.hand&&comm.length>=2){usedSet=(evaluateHand([...me.hand,...comm]).usedIndices)||new Set();}
+  else if(me.hand)usedSet=new Set([0,1]);
+  const cardsEl=document.getElementById('my-cards');
+  cardsEl.innerHTML='';
+  if(me.hand)me.hand.forEach((c,i)=>cardsEl.appendChild(buildMyCardEl(c,usedSet.has(i))));
 }
 
-function renderActions(state) {
-  const turnOrder = state.turnOrder || [];
-  const turnIndex = state.turnIndex ?? -1;
-  const myTurn = turnOrder[turnIndex] === myId;
-  const me = state.players?.[myId];
-  const phase = state.phase;
-
+function renderActions(state){
+  const turnOrder=state.turnOrder||[], turnIndex=state.turnIndex??-1;
+  const myTurn=turnOrder[turnIndex]===myId, me=state.players?.[myId], phase=state.phase;
   document.getElementById('turn-waiting').classList.add('hidden');
   document.getElementById('my-turn-actions').classList.add('hidden');
   document.getElementById('host-next-round').classList.add('hidden');
-
-  if (phase === 'tournament_end') {
-    const w = document.getElementById('turn-waiting');
-    w.classList.remove('hidden'); w.classList.remove('pulse');
-    const champ = state.players?.[state.champion];
-    w.innerHTML = `🎉 <strong>${champ ? esc(champ.name) : '??'}</strong> の優勝！`;
+  if(phase==='tournament_end'){
+    const w=document.getElementById('turn-waiting');
+    w.classList.remove('hidden');w.classList.remove('pulse');
+    const champ=state.players?.[state.champion];
+    w.innerHTML=`🎉 <strong>${champ?esc(champ.name):'??'}</strong> の優勝！`;return;
+  }
+  if(phase==='showdown'){
+    if(isHost)document.getElementById('host-next-round').classList.remove('hidden');
+    else{const w=document.getElementById('turn-waiting');w.classList.remove('hidden');w.classList.remove('pulse');w.textContent='ホストが次のラウンドを開始します...';}
     return;
   }
-
-  if (phase === 'showdown') {
-    if (isHost) {
-      document.getElementById('host-next-round').classList.remove('hidden');
-    } else {
-      const w = document.getElementById('turn-waiting');
-      w.classList.remove('hidden'); w.classList.remove('pulse');
-      w.textContent = 'ホストが次のラウンドを開始します...';
-    }
+  if(!myTurn||!me||me.status==='folded'||me.status==='allin'){
+    const w=document.getElementById('turn-waiting');
+    w.classList.remove('hidden');w.classList.add('pulse');
+    w.textContent=me?.status==='folded'?'フォールド済み (観戦中)':me?.status==='allin'?'オールイン済み (観戦中)':'他のプレイヤーのターン...';
     return;
   }
-
-  if (!myTurn || !me || me.status === 'folded' || me.status === 'allin') {
-    const w = document.getElementById('turn-waiting');
-    w.classList.remove('hidden'); w.classList.add('pulse');
-    w.textContent = me?.status === 'folded' ? 'フォールド済み (観戦中)' :
-                    me?.status === 'allin' ? 'オールイン済み (観戦中)' :
-                    '他のプレイヤーのターン...';
-    return;
-  }
-
   document.getElementById('my-turn-actions').classList.remove('hidden');
-  const currentBet = state.currentBet || 0;
-  const myBet = me.bet || 0;
-  const toCall = currentBet - myBet;
-  const canCheck = toCall <= 0;
-
-  const checkBtn = document.getElementById('check-btn');
-  const callBtn = document.getElementById('call-btn');
-  checkBtn.disabled = !canCheck;
-  callBtn.disabled = canCheck;
-  callBtn.textContent = canCheck ? 'コール' : `コール (${Math.min(toCall, me.chips)})`;
-
-  initSlider(state);
+  const currentBet=state.currentBet||0, myBet=me.bet||0, toCall=currentBet-myBet;
+  const canCheck=toCall<=0;
+  document.getElementById('check-btn').disabled=!canCheck;
+  document.getElementById('call-btn').disabled=canCheck;
+  document.getElementById('call-btn').textContent=canCheck?'チェック済':'コール ('+Math.min(toCall,me.chips)+')';
+  document.getElementById('check-btn').textContent='チェック';
+  initBetUI(state);
 }
 
-function renderLog(state) {
-  const log = state.log || [];
-  const el = document.getElementById('action-log');
-  el.innerHTML = '';
-  const arr = Array.isArray(log) ? log : Object.values(log);
-  arr.slice(-5).forEach(entry => {
-    const d = document.createElement('div');
-    d.className = 'log-entry' + (entry.important ? ' important' : '');
-    d.textContent = entry.text;
-    el.appendChild(d);
+function renderLog(state){
+  const log=state.log||[], el=document.getElementById('action-log');
+  el.innerHTML='';
+  const arr=Array.isArray(log)?log:Object.values(log);
+  arr.slice(-5).forEach(entry=>{
+    const d=document.createElement('div');
+    d.className='log-entry'+(entry.important?' important':'');
+    d.textContent=entry.text;el.appendChild(d);
   });
-  el.scrollTop = el.scrollHeight;
+  el.scrollTop=el.scrollHeight;
 }
 
-function renderResult(state) {
-  const players = state.players || {};
-  const winners = Object.entries(players).filter(([,p]) => p.status === 'winner');
-  const pot = state.pot || 0;
-
-  const isWinner = winners.some(([id]) => id === myId);
-  const isTournamentEnd = state.phase === 'tournament_end';
-  document.getElementById('result-emoji').textContent = isWinner ? '🏆' : '😔';
-  document.getElementById('result-title').textContent =
-    isTournamentEnd && isWinner ? '🎉 優勝！' : isWinner ? '勝利！' : 'ショーダウン';
-  document.getElementById('result-detail').textContent =
-    winners.map(([id]) => `${players[id].name} が ${pot} チップ獲得！`).join('\n');
-
-  const handsEl = document.getElementById('result-hands');
-  handsEl.innerHTML = '';
-  const comm = state.community || [];
-  const active = Object.entries(players)
-    .filter(([,p]) => p.status !== 'folded' && p.status !== 'left' && p.hand);
-  active.forEach(([id, p]) => {
-    const best = p.hand ? evaluateHand([...p.hand, ...comm]) : null;
-    const div = document.createElement('div');
-    div.className = 'result-hand-item';
-    div.innerHTML = `
-      <span>${esc(p.name)}: ${p.hand ? p.hand.map(c => cardEmoji(c)).join('') : ''}</span>
-      <span>${best ? best.name : ''}</span>
-      ${p.status === 'winner' ? '<span class="winner-tag">WIN</span>' : ''}
-    `;
+function renderResult(state){
+  const players=state.players||{}, winners=Object.entries(players).filter(([,p])=>p.status==='winner');
+  const pot=state.pot||0, isWinner=winners.some(([id])=>id===myId);
+  document.getElementById('result-emoji').textContent=isWinner?'🏆':'😔';
+  document.getElementById('result-title').textContent=(state.phase==='tournament_end'&&isWinner)?'🎉 優勝！':isWinner?'勝利！':'ショーダウン';
+  document.getElementById('result-detail').textContent=winners.map(([id])=>`${players[id].name} が ${pot} チップ獲得！`).join('\n');
+  const handsEl=document.getElementById('result-hands');
+  handsEl.innerHTML='';
+  const comm=state.community||[];
+  Object.entries(players).filter(([,p])=>p.status!=='folded'&&p.status!=='left'&&p.hand).forEach(([id,p])=>{
+    const best=evaluateHand([...p.hand,...comm]);
+    const div=document.createElement('div');div.className='result-hand-item';
+    div.innerHTML=`<span>${esc(p.name)}: ${p.hand.map(c=>cardEmoji(c)).join('')}</span><span>${best.name}</span>${p.status==='winner'?'<span class="winner-tag">WIN</span>':''}`;
     handsEl.appendChild(div);
   });
-
   document.getElementById('result-overlay').classList.add('show');
 }
+window.closeResult=()=>document.getElementById('result-overlay').classList.remove('show');
 
-window.closeResult = () => {
-  document.getElementById('result-overlay').classList.remove('show');
-};
+// ── BET UI ──
+function initBetUI(state){
+  const me=state.players?.[myId];
+  if(!me)return;
+  const currentBet=state.currentBet||0, myBet=me.bet||0;
+  const blind=state.blind||10;
+  const lastRaiseSize=state.lastRaiseSize||blind;
+  betStep=blind;
+  betMin=Math.min(currentBet+lastRaiseSize, me.chips+myBet); // オールイン以下に収める
+  betMax=me.chips+myBet; // オールイン
+  currentBetVal=betMin;
 
-// ─────── ACTIONS ───────
-// [FIX #1] アクション実行中フラグで二重送信防止
-let actionInProgress = false;
-
-window.playerAction = async (action) => {
-  if (!gameState || actionInProgress) return;
-  actionInProgress = true;
-  try {
-    await _doPlayerAction(action);
-  } finally {
-    actionInProgress = false;
-  }
-};
-
-async function _doPlayerAction(action) {
-  const state = gameState;
-  const turnOrder = state.turnOrder || [];
-  const turnIndex = state.turnIndex;
-  if (turnOrder[turnIndex] !== myId) return;
-
-  const me = state.players[myId];
-  const currentBet = state.currentBet || 0;
-  const myBet = me.bet || 0;
-  const toCall = currentBet - myBet;
-  let updates = {};
-  let logText = '';
-  let isRaise = false;
-
-  if (action === 'fold') {
-    updates[`rooms/${roomCode}/players/${myId}/status`] = 'folded';
-    logText = `${myName} フォールド`;
-
-  } else if (action === 'check') {
-    if (toCall > 0) return;
-    logText = `${myName} チェック`;
-
-  } else if (action === 'call') {
-    const amount = Math.min(toCall, me.chips);
-    const newChips = me.chips - amount;
-    const newBet = myBet + amount;
-    updates[`rooms/${roomCode}/players/${myId}/chips`] = newChips;
-    updates[`rooms/${roomCode}/players/${myId}/bet`] = newBet;
-    // [FIX #2] ポットはTransactionで加算して競合防止
-    if (newChips === 0) {
-      updates[`rooms/${roomCode}/players/${myId}/status`] = 'allin';
-      logText = `${myName} オールイン！ (${newBet})`;
-    } else {
-      logText = `${myName} コール (${newBet})`;
-    }
-    await update(ref(db), updates);
-    updates = {};
-    await runTransaction(ref(db, `rooms/${roomCode}/pot`), (pot) => (pot || 0) + amount);
-
-  } else if (action === 'raise') {
-    const raiseAmount = parseInt(document.getElementById('raise-input').value);
-    if (!raiseAmount || raiseAmount < sliderMin) return;
-
-    const totalBet = raiseAmount;
-    const totalPay = totalBet - myBet;
-
-    if (totalPay >= me.chips) {
-      // All in
-      const allInBet = myBet + me.chips;
-      const paid = me.chips;
-      updates[`rooms/${roomCode}/players/${myId}/chips`] = 0;
-      updates[`rooms/${roomCode}/players/${myId}/bet`] = allInBet;
-      updates[`rooms/${roomCode}/players/${myId}/status`] = 'allin';
-      if (allInBet > currentBet) {
-        updates[`rooms/${roomCode}/currentBet`] = allInBet;
-        // [FIX #6] レイズ幅を更新
-        updates[`rooms/${roomCode}/lastRaiseSize`] = allInBet - currentBet;
-      }
-      updates[`rooms/${roomCode}/bbHasOption`] = false;
-      logText = `${myName} オールイン！ (${allInBet})`;
-      isRaise = true;
-      await update(ref(db), updates);
-      updates = {};
-      await runTransaction(ref(db, `rooms/${roomCode}/pot`), (pot) => (pot || 0) + paid);
-    } else {
-      updates[`rooms/${roomCode}/players/${myId}/chips`] = me.chips - totalPay;
-      updates[`rooms/${roomCode}/players/${myId}/bet`] = totalBet;
-      updates[`rooms/${roomCode}/currentBet`] = totalBet;
-      // [FIX #6] レイズ幅を更新
-      updates[`rooms/${roomCode}/lastRaiseSize`] = totalBet - currentBet;
-      updates[`rooms/${roomCode}/bbHasOption`] = false;
-      logText = `${myName} レイズ → ${totalBet}`;
-      isRaise = true;
-      await update(ref(db), updates);
-      updates = {};
-      await runTransaction(ref(db, `rooms/${roomCode}/pot`), (pot) => (pot || 0) + totalPay);
-    }
-    document.getElementById('raise-input').value = '';
-  }
-
-  if (Object.keys(updates).length) await update(ref(db), updates);
-  await advanceTurn(action, logText, isRaise);
+  const slider=document.getElementById('raise-slider');
+  slider.min=betMin; slider.max=betMax; slider.step=betStep; slider.value=betMin;
+  document.getElementById('slider-min-label').textContent='MIN ('+betMin+')';
+  document.getElementById('slider-max-label').textContent='ALL IN ('+betMax+')';
+  updateBetDisplay();
 }
 
-async function advanceTurn(action, logText, isRaise) {
-  const snap = await get(ref(db, `rooms/${roomCode}`));
-  const state = snap.val();
-  const turnOrder = state.turnOrder;
-  const n = turnOrder.length;
-  const players = state.players;
-  const blind = state.blind || 10;
-  const bbIndex = state.bbIndex ?? 1;
+function updateBetDisplay(){
+  document.getElementById('bet-amount-display').textContent=currentBetVal;
+  const slider=document.getElementById('raise-slider');
+  slider.value=currentBetVal;
+  const pct=betMax===betMin?100:((currentBetVal-betMin)/(betMax-betMin))*100;
+  slider.style.background=`linear-gradient(to right,var(--gold) ${pct.toFixed(1)}%,rgba(255,255,255,.08) ${pct.toFixed(1)}%)`;
+  // 警告チェック
+  const w=document.getElementById('bet-warning');
+  if(currentBetVal<betMin&&currentBetVal<betMax){
+    w.classList.add('show');
+    w.innerHTML=`最低レイズ額は <strong>${betMin}</strong> です`;
+  } else { w.classList.remove('show'); }
+}
+
+window.onSlider=function(el){
+  currentBetVal=parseInt(el.value);
+  updateBetDisplay();
+};
+
+window.adjustBet=function(dir){
+  // ブラインド単位で±1
+  currentBetVal=Math.max(betMin,Math.min(betMax,currentBetVal+dir*betStep));
+  updateBetDisplay();
+};
+
+window.setPreset=function(preset){
+  if(!gameState)return;
+  const pot=gameState.pot||0;
+  if(preset==='min') currentBetVal=betMin;
+  else if(preset==='allin') currentBetVal=betMax;
+  else{
+    const target=Math.round(pot*preset)+(gameState.currentBet||0);
+    currentBetVal=Math.max(betMin,Math.min(betMax,Math.round(target/betStep)*betStep));
+  }
+  updateBetDisplay();
+};
+
+// ── ACTIONS ──
+let actionInProgress=false;
+window.playerAction=async(action)=>{
+  if(!gameState||actionInProgress)return;
+  actionInProgress=true;
+  try{ await _doPlayerAction(action); }
+  finally{ actionInProgress=false; }
+};
+
+async function _doPlayerAction(action){
+  const state=gameState;
+  const turnOrder=state.turnOrder||[], turnIndex=state.turnIndex;
+  if(turnOrder[turnIndex]!==myId)return;
+  const me=state.players[myId];
+  const currentBet=state.currentBet||0, myBet=me.bet||0, toCall=currentBet-myBet;
+  let updates={}, logText='', isRaise=false;
+
+  if(action==='fold'){
+    updates[`rooms/${roomCode}/players/${myId}/status`]='folded';
+    logText=`${myName} フォールド`;
+
+  }else if(action==='check'){
+    if(toCall>0)return;
+    logText=`${myName} チェック`;
+
+  }else if(action==='call'){
+    const amount=Math.min(toCall,me.chips);
+    const newChips=me.chips-amount, newBet=myBet+amount;
+    updates[`rooms/${roomCode}/players/${myId}/chips`]=newChips;
+    updates[`rooms/${roomCode}/players/${myId}/bet`]=newBet;
+    if(newChips===0){updates[`rooms/${roomCode}/players/${myId}/status`]='allin';logText=`${myName} オールイン！(${newBet})`;}
+    else logText=`${myName} コール (${newBet})`;
+    await update(ref(db),updates); updates={};
+    await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+amount);
+
+  }else if(action==='raise'){
+    const raiseAmount=currentBetVal;
+    // 金額不足チェック
+    if(raiseAmount<betMin){
+      const w=document.getElementById('bet-warning');
+      w.classList.add('show');
+      w.innerHTML=`最低レイズ額は <strong>${betMin}</strong> です`;
+      return;
+    }
+    const totalBet=raiseAmount, totalPay=totalBet-myBet;
+    if(totalPay>=me.chips){
+      // All in
+      const allInBet=myBet+me.chips, paid=me.chips;
+      updates[`rooms/${roomCode}/players/${myId}/chips`]=0;
+      updates[`rooms/${roomCode}/players/${myId}/bet`]=allInBet;
+      updates[`rooms/${roomCode}/players/${myId}/status`]='allin';
+      if(allInBet>currentBet){
+        updates[`rooms/${roomCode}/currentBet`]=allInBet;
+        updates[`rooms/${roomCode}/lastRaiseSize`]=allInBet-currentBet;
+      }
+      updates[`rooms/${roomCode}/bbHasOption`]=false;
+      logText=`${myName} オールイン！(${allInBet})`; isRaise=true;
+      await update(ref(db),updates); updates={};
+      await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+paid);
+    }else{
+      updates[`rooms/${roomCode}/players/${myId}/chips`]=me.chips-totalPay;
+      updates[`rooms/${roomCode}/players/${myId}/bet`]=totalBet;
+      updates[`rooms/${roomCode}/currentBet`]=totalBet;
+      updates[`rooms/${roomCode}/lastRaiseSize`]=totalBet-currentBet;
+      updates[`rooms/${roomCode}/bbHasOption`]=false;
+      logText=`${myName} レイズ → ${totalBet}`; isRaise=true;
+      await update(ref(db),updates); updates={};
+      await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+totalPay);
+    }
+  }
+
+  if(Object.keys(updates).length)await update(ref(db),updates);
+  await advanceTurn(action,logText,isRaise);
+}
+
+// ── ADVANCE TURN ──
+// BUG FIX①: DBから最新stateを取得して判定 → 問題は「自分のアクション分がDBに反映される前に読む」こと
+// 対策: アクションの書き込みが完了してからadvanceTurnを呼んでいるので、
+//        ここで再度DBから読み直す際に最新値が得られる。
+//        さらに、自分のアクション結果をローカルで上書きして判定することで整合性を保つ。
+async function advanceTurn(action, logText, isRaise){
+  // DBから最新状態を取得
+  const snap=await get(ref(db,`rooms/${roomCode}`));
+  const state=snap.val();
+  const turnOrder=state.turnOrder;
+  const n=turnOrder.length;
+  const players=state.players;
+  const bbIndex=state.bbIndex??1;
 
   // ログ追記
-  const currentLog = Array.isArray(state.log) ? [...state.log] : Object.values(state.log || {});
-  currentLog.push({ text: logText, important: isRaise });
-  if (currentLog.length > 20) currentLog.splice(0, currentLog.length - 20);
-  await update(ref(db, `rooms/${roomCode}`), { log: currentLog });
+  const currentLog=Array.isArray(state.log)?[...state.log]:Object.values(state.log||{});
+  currentLog.push({text:logText,important:isRaise||false});
+  if(currentLog.length>20)currentLog.splice(0,currentLog.length-20);
+  await update(ref(db,`rooms/${roomCode}`),{log:currentLog});
 
-  // 1人だけ残っていたら即勝利
-  const notFolded = turnOrder.filter(id => {
-    const p = players[id];
-    return p && p.status !== 'folded' && p.status !== 'left';
+  // フォールド後に1人だけ残っているか判定
+  const notFolded=turnOrder.filter(id=>{
+    const p=players[id];
+    return p&&p.status!=='folded'&&p.status!=='left';
   });
-  if (notFolded.length === 1) {
-    await endRound(state, notFolded);
+  if(notFolded.length===1){
+    // BUG FIX②: ホストのみendRoundを実行するが、非ホストがフォールドした場合も
+    // ホストへ「即決着」シグナルをDBに書き込んで、ホスト側のonValueで処理させる
+    if(isHost){
+      await endRound(state,notFolded);
+    } else {
+      // 非ホスト: DBにinstantWinフラグを書いてホストに委ねる
+      await update(ref(db,`rooms/${roomCode}`),{instantWin:notFolded[0]});
+    }
     return;
   }
 
-  const currentBet = state.currentBet || 0;
-
-  // 全員がベット一致 or オールイン or フォールドか判定
-  const allSettled = turnOrder.every(id => {
-    const p = players[id];
-    if (!p || p.status === 'folded' || p.status === 'left' || p.status === 'allin') return true;
-    return p.bet === currentBet;
+  const currentBet=state.currentBet||0;
+  const allSettled=turnOrder.every(id=>{
+    const p=players[id];
+    if(!p||p.status==='folded'||p.status==='left'||p.status==='allin')return true;
+    return p.bet===currentBet;
   });
 
-  // [FIX #3] BBのオプションチェック
-  // preflopで全員コールしてもBBはチェックかレイズのオプションを持つ
-  const bbId = turnOrder[bbIndex];
-  const bbIsNext = turnOrder[(state.turnIndex + 1) % n] === bbId ||
-                   turnOrder[state.turnIndex] === bbId;
-  const bbHasOption = state.bbHasOption && state.phase === 'preflop' && bbId;
+  // BBオプション (preflop: 全員コール時にBBがチェック/レイズできる)
+  const bbId=turnOrder[bbIndex];
+  const bbHasOption=state.bbHasOption&&state.phase==='preflop'&&bbId;
 
-  if (allSettled) {
-    // BBオプション: BBがまだアクションしていない、かつ誰もレイズしていない場合
-    if (bbHasOption && players[bbId]?.status === 'active' && !isRaise) {
-      // BBにターンを渡す
-      await update(ref(db, `rooms/${roomCode}`), {
-        turnIndex: bbIndex,
-        bbHasOption: false
-      });
+  if(allSettled){
+    if(bbHasOption&&players[bbId]?.status==='active'&&!isRaise){
+      await update(ref(db,`rooms/${roomCode}`),{turnIndex:bbIndex,bbHasOption:false});
       return;
     }
-    // フェーズ進行
-    await advancePhase(state);
+    // BUG FIX①: フェーズ進行もホストのみが実行
+    if(isHost){
+      await advancePhase(state);
+    } else {
+      await update(ref(db,`rooms/${roomCode}`),{phaseAdvanceNeeded:true});
+    }
     return;
   }
 
   // 次のアクティブプレイヤーへ
-  let nextIndex = (state.turnIndex + 1) % n;
-  for (let i = 0; i < n; i++) {
-    const pid = turnOrder[nextIndex];
-    const pp = players[pid];
-    if (pp && pp.status === 'active') break;
-    nextIndex = (nextIndex + 1) % n;
+  let nextIndex=(state.turnIndex+1)%n;
+  for(let i=0;i<n;i++){
+    const pid=turnOrder[nextIndex];
+    const pp=players[pid];
+    if(pp&&pp.status==='active')break;
+    nextIndex=(nextIndex+1)%n;
   }
-
-  // レイズ時はBBオプションをリセット（BBがすでにレイズに対してアクション待ち）
-  const upd = { turnIndex: nextIndex };
-  if (isRaise) upd.bbHasOption = false;
-  await update(ref(db, `rooms/${roomCode}`), upd);
+  const upd={turnIndex:nextIndex};
+  if(isRaise)upd.bbHasOption=false;
+  await update(ref(db,`rooms/${roomCode}`),upd);
 }
 
-async function advancePhase(state) {
-  const phase = state.phase;
-  const deck = [...(state.deck || [])];
-  const community = [...(state.community || [])];
-  const turnOrder = state.turnOrder;
-  const players = state.players;
-  const dealerIdx = state.dealerIndex ?? 0;
-  const n = turnOrder.length;
+// ── ADVANCE PHASE (ホストのみ) ──
+async function advancePhase(state){
+  const phase=state.phase;
+  const deck=[...(state.deck||[])];
+  const community=[...(state.community||[])];
+  const turnOrder=state.turnOrder, players=state.players;
+  const dealerIdx=state.dealerIndex??0, n=turnOrder.length;
+  const updates={};
 
-  const updates = {};
   // ベットリセット
-  turnOrder.forEach(id => {
-    const p = players[id];
-    if (p && p.status !== 'folded' && p.status !== 'left') {
-      updates[`rooms/${roomCode}/players/${id}/bet`] = 0;
-    }
+  turnOrder.forEach(id=>{
+    const p=players[id];
+    if(p&&p.status!=='folded'&&p.status!=='left')
+      updates[`rooms/${roomCode}/players/${id}/bet`]=0;
   });
-  updates[`rooms/${roomCode}/currentBet`] = 0;
-  updates[`rooms/${roomCode}/lastRaiseSize`] = state.blind || 10; // [FIX #6] 新フェーズはblind幅にリセット
-  updates[`rooms/${roomCode}/bbHasOption`] = false;
+  updates[`rooms/${roomCode}/currentBet`]=0;
+  updates[`rooms/${roomCode}/lastRaiseSize`]=state.blind||10;
+  updates[`rooms/${roomCode}/bbHasOption`]=false;
+  updates[`rooms/${roomCode}/phaseAdvanceNeeded`]=false;
 
-  // ディーラーの次のアクティブプレイヤーからスタート
-  let firstActor = (dealerIdx + 1) % n;
-  for (let i = 0; i < n; i++) {
-    const pid = turnOrder[firstActor];
-    const pp = players[pid];
-    if (pp && pp.status === 'active') break;
-    firstActor = (firstActor + 1) % n;
+  // ディーラー次のアクティブプレイヤー
+  let firstActor=(dealerIdx+1)%n;
+  for(let i=0;i<n;i++){
+    if(players[turnOrder[firstActor]]?.status==='active')break;
+    firstActor=(firstActor+1)%n;
   }
 
-  // 全員allinなら残りのボードを一気に出してショーダウン
-  const activeCount = turnOrder.filter(id => players[id]?.status === 'active').length;
+  const activeCount=turnOrder.filter(id=>players[id]?.status==='active').length;
 
-  if (phase === 'preflop') {
-    const flop = [deck.shift(), deck.shift(), deck.shift()];
-    updates[`rooms/${roomCode}/community`] = flop;
-    updates[`rooms/${roomCode}/deck`] = deck;
-    if (activeCount <= 1) {
-      // 残りのカードを一気に出す
-      const turn = deck.shift();
-      const river = deck.shift();
-      updates[`rooms/${roomCode}/community`] = [...flop, turn, river];
-      updates[`rooms/${roomCode}/phase`] = 'river';
-      updates[`rooms/${roomCode}/turnIndex`] = firstActor;
-      await update(ref(db), updates);
-      await addLogDB('── フロップ / ターン / リバー (オールイン) ──');
-      await advancePhase({ ...state, phase: 'river', community: [...flop, turn, river], players, deck, dealerIndex: dealerIdx, turnOrder, blind: state.blind });
-    } else {
-      updates[`rooms/${roomCode}/phase`] = 'flop';
-      updates[`rooms/${roomCode}/turnIndex`] = firstActor;
-      await update(ref(db), updates);
+  if(phase==='preflop'){
+    const flop=[deck.shift(),deck.shift(),deck.shift()];
+    if(activeCount<=1){
+      const turn=deck.shift(), river=deck.shift();
+      updates[`rooms/${roomCode}/community`]=[...flop,turn,river];
+      updates[`rooms/${roomCode}/deck`]=deck;
+      updates[`rooms/${roomCode}/phase`]='river';
+      updates[`rooms/${roomCode}/turnIndex`]=firstActor;
+      await update(ref(db),updates);
+      await addLogDB('── フロップ/ターン/リバー (オールイン) ──');
+      await endRound({...state,phase:'river',community:fullComm,players,deck},null);
+    }else{
+      updates[`rooms/${roomCode}/community`]=flop;
+      updates[`rooms/${roomCode}/deck`]=deck;
+      updates[`rooms/${roomCode}/phase`]='flop';
+      updates[`rooms/${roomCode}/turnIndex`]=firstActor;
+      await update(ref(db),updates);
       await addLogDB('── フロップ ──');
     }
-  } else if (phase === 'flop') {
+  }else if(phase==='flop'){
     community.push(deck.shift());
-    updates[`rooms/${roomCode}/community`] = community;
-    updates[`rooms/${roomCode}/deck`] = deck;
-    updates[`rooms/${roomCode}/phase`] = 'turn';
-    updates[`rooms/${roomCode}/turnIndex`] = firstActor;
-    await update(ref(db), updates);
+    updates[`rooms/${roomCode}/community`]=community;
+    updates[`rooms/${roomCode}/deck`]=deck;
+    updates[`rooms/${roomCode}/phase`]='turn';
+    updates[`rooms/${roomCode}/turnIndex`]=firstActor;
+    await update(ref(db),updates);
     await addLogDB('── ターン ──');
-  } else if (phase === 'turn') {
+  }else if(phase==='turn'){
     community.push(deck.shift());
-    updates[`rooms/${roomCode}/community`] = community;
-    updates[`rooms/${roomCode}/deck`] = deck;
-    updates[`rooms/${roomCode}/phase`] = 'river';
-    updates[`rooms/${roomCode}/turnIndex`] = firstActor;
-    await update(ref(db), updates);
+    updates[`rooms/${roomCode}/community`]=community;
+    updates[`rooms/${roomCode}/deck`]=deck;
+    updates[`rooms/${roomCode}/phase`]='river';
+    updates[`rooms/${roomCode}/turnIndex`]=firstActor;
+    await update(ref(db),updates);
     await addLogDB('── リバー ──');
-  } else if (phase === 'river') {
-    await endRound(state, null);
+  }else if(phase==='river'){
+    await endRound(state,null);
   }
 }
 
-async function endRound(state, forcedWinners) {
-  // [FIX #1] endRoundもlockで二重実行防止（ホストのみが実行）
-  if (!isHost) return;
+// ── END ROUND (ホストのみ) ──
+async function endRound(state,forcedWinners){
+  if(!isHost)return;
+  const players=state.players, turnOrder=state.turnOrder, community=state.community||[];
+  const potSnap=await get(ref(db,`rooms/${roomCode}/pot`));
+  const pot=potSnap.val()||0;
+  let winnerIds=[];
 
-  const players = state.players;
-  const turnOrder = state.turnOrder;
-  const community = state.community || [];
-
-  // [FIX #2] 最新のpotをDBから取得（競合対策）
-  const potSnap = await get(ref(db, `rooms/${roomCode}/pot`));
-  const pot = potSnap.val() || 0;
-
-  let winnerIds = [];
-
-  if (forcedWinners) {
-    winnerIds = forcedWinners;
-  } else {
-    const handsSnap = await get(ref(db, `rooms/${roomCode}/hands`));
-    const allHands = handsSnap.val() || {};
-    const notFolded = turnOrder.filter(id => {
-      const p = players[id];
-      return p && p.status !== 'folded' && p.status !== 'left' && allHands[id];
+  if(forcedWinners){
+    winnerIds=forcedWinners;
+  }else{
+    const handsSnap=await get(ref(db,`rooms/${roomCode}/hands`));
+    const allHands=handsSnap.val()||{};
+    const notFolded=turnOrder.filter(id=>{
+      const p=players[id];
+      return p&&p.status!=='folded'&&p.status!=='left'&&allHands[id];
     });
-
-    // [FIX #8] 正確なタイブレーク比較
-    let bestScore = null;
-    notFolded.forEach(id => {
-      const hand = allHands[id];
-      const result = evaluateHand([...hand, ...community]);
-      if (!bestScore || compareHands(result, bestScore) > 0) {
-        bestScore = result;
-        winnerIds = [id];
-      } else if (compareHands(result, bestScore) === 0) {
-        winnerIds.push(id);
-      }
+    let bestScore=null;
+    notFolded.forEach(id=>{
+      const result=evaluateHand([...allHands[id],...community]);
+      if(!bestScore||compareHands(result,bestScore)>0){bestScore=result;winnerIds=[id];}
+      else if(compareHands(result,bestScore)===0)winnerIds.push(id);
     });
-
-    const showdownHandsUpdate = {};
-    notFolded.forEach(id => {
-      showdownHandsUpdate[`rooms/${roomCode}/showdownHands/${id}`] = allHands[id];
-    });
-    await update(ref(db), showdownHandsUpdate);
+    const sdUpdate={};
+    notFolded.forEach(id=>{ sdUpdate[`rooms/${roomCode}/showdownHands/${id}`]=allHands[id]; });
+    await update(ref(db),sdUpdate);
   }
 
-  // [FIX #5] 端数チップは最初の勝者に加算（消えない）
-  const share = Math.floor(pot / winnerIds.length);
-  const remainder = pot - share * winnerIds.length;
+  // BUG FIX②: winnerIdsが空の場合のガード
+  if(winnerIds.length===0){
+    // フォールドしていない全員を勝者にする（安全策）
+    const fallback=turnOrder.filter(id=>{
+      const p=players[id];
+      return p&&p.status!=='folded'&&p.status!=='left';
+    });
+    winnerIds=fallback.length>0?fallback:[turnOrder[0]];
+  }
 
-  const updates = {};
-  winnerIds.forEach((id, i) => {
-    const bonus = i === 0 ? remainder : 0;
-    updates[`rooms/${roomCode}/players/${id}/chips`] = (players[id].chips || 0) + share + bonus;
-    updates[`rooms/${roomCode}/players/${id}/status`] = 'winner';
+  const share=Math.floor(pot/winnerIds.length);
+  const remainder=pot-share*winnerIds.length;
+  const updates={};
+  winnerIds.forEach((id,i)=>{
+    const bonus=i===0?remainder:0;
+    updates[`rooms/${roomCode}/players/${id}/chips`]=(players[id].chips||0)+share+bonus;
+    updates[`rooms/${roomCode}/players/${id}/status`]='winner';
   });
-  updates[`rooms/${roomCode}/phase`] = 'showdown';
+  updates[`rooms/${roomCode}/phase`]='showdown';
+  updates[`rooms/${roomCode}/instantWin`]=null;
+  updates[`rooms/${roomCode}/phaseAdvanceNeeded`]=false;
+  await update(ref(db),updates);
+  await addLogDB(`🏆 ${winnerIds.map(id=>players[id].name).join(', ')} が ${pot} チップを獲得！`,true);
 
-  await update(ref(db), updates);
-  const names = winnerIds.map(id => players[id].name).join(', ');
-  await addLogDB(`🏆 ${names} が ${pot} チップを獲得！`, true);
+  // 敗退・優勝判定
+  const allSnap=await get(ref(db,`rooms/${roomCode}/players`));
+  const allPlayers=allSnap.val()||{};
+  const elimUpdates={};
+  Object.entries(allPlayers).forEach(([id,p])=>{
+    if(p.status!=='left'&&p.status!=='winner'&&p.chips<=0)
+      elimUpdates[`rooms/${roomCode}/players/${id}/status`]='eliminated';
+  });
+  if(Object.keys(elimUpdates).length)await update(ref(db),elimUpdates);
 
-  // 敗退判定
-  const allSnap = await get(ref(db, `rooms/${roomCode}/players`));
-  const allPlayers = allSnap.val() || {};
-  const elimUpdates = {};
-  Object.entries(allPlayers).forEach(([id, p]) => {
-    if (p.status !== 'left' && p.status !== 'winner' && p.chips <= 0) {
-      elimUpdates[`rooms/${roomCode}/players/${id}/status`] = 'eliminated';
+  const checkSnap=await get(ref(db,`rooms/${roomCode}/players`));
+  const alive=Object.entries(checkSnap.val()||{})
+    .filter(([,p])=>p.status!=='left'&&p.status!=='eliminated'&&p.chips>0);
+  if(alive.length===1){
+    await update(ref(db,`rooms/${roomCode}`),{phase:'tournament_end',champion:alive[0][0]});
+    await addLogDB(`🎉 ${alive[0][1].name} がトーナメント優勝！`,true);
+  }
+}
+
+// ── ホスト側: DBフラグを監視して処理を引き受ける ──
+// subscribeRoom内のonValueで gameState が更新されるたびに呼ばれる renderGame の中で
+// isHost かつフラグが立っていれば実行する形に統合
+const _origRenderGame=window._renderGameHook;
+// onValueハンドラ内でホスト委譲処理を追加
+function handleHostDelegation(state){
+  if(!isHost)return;
+  // 即決着フラグ
+  if(state.instantWin&&state.phase!=='showdown'&&state.phase!=='tournament_end'){
+    const winner=state.instantWin;
+    endRound(state,[winner]);
+    return;
+  }
+  // フェーズ進行フラグ
+  if(state.phaseAdvanceNeeded&&state.phase!=='showdown'&&state.phase!=='tournament_end'){
+    advancePhase(state);
+  }
+}
+
+// subscribeRoom を再定義してhook挿入
+function subscribeRoom(){
+  if(unsubscribe)unsubscribe();
+  if(unsubHand)unsubHand();
+  const r=ref(db,'rooms/'+roomCode);
+  const handler=onValue(r,snap=>{
+    if(!snap.exists())return;
+    gameState=snap.val();
+    if(gameState.host===myId&&!isHost)isHost=true;
+    if(gameState.showdownHands){
+      Object.entries(gameState.showdownHands).forEach(([id,hand])=>{
+        if(gameState.players?.[id])gameState.players[id].hand=hand;
+      });
     }
+    if(myHand&&gameState.players?.[myId])gameState.players[myId].hand=myHand;
+    handleHostDelegation(gameState);
+    renderGame(gameState);
   });
-  if (Object.keys(elimUpdates).length) await update(ref(db), elimUpdates);
-
-  const checkSnap = await get(ref(db, `rooms/${roomCode}/players`));
-  const checkPlayers = checkSnap.val() || {};
-  const alive = Object.entries(checkPlayers)
-    .filter(([,p]) => p.status !== 'left' && p.status !== 'eliminated' && p.chips > 0);
-  if (alive.length === 1) {
-    await update(ref(db, `rooms/${roomCode}`), { phase: 'tournament_end', champion: alive[0][0] });
-    await addLogDB(`🎉 ${alive[0][1].name} がトーナメント優勝！`, true);
-  }
+  unsubscribe=()=>off(r,'value',handler);
+  const hr=ref(db,`rooms/${roomCode}/hands/${myId}`);
+  const hh=onValue(hr,snap=>{
+    if(!snap.exists())return;
+    myHand=snap.val();
+    if(gameState?.players?.[myId]){gameState.players[myId].hand=myHand;renderGame(gameState);}
+  });
+  unsubHand=()=>off(hr,'value',hh);
 }
 
-async function addLogDB(text, important = false) {
-  const snap = await get(ref(db, `rooms/${roomCode}/log`));
-  const current = snap.val() || [];
-  const arr = Array.isArray(current) ? [...current] : Object.values(current);
-  arr.push({ text, important: important || false });
-  if (arr.length > 20) arr.splice(0, arr.length - 20);
-  await update(ref(db, `rooms/${roomCode}`), { log: arr });
+// ── LOG ──
+async function addLogDB(text,important=false){
+  const snap=await get(ref(db,`rooms/${roomCode}/log`));
+  const current=snap.val()||[];
+  const arr=Array.isArray(current)?[...current]:Object.values(current);
+  arr.push({text,important:important||false});
+  if(arr.length>20)arr.splice(0,arr.length-20);
+  await update(ref(db,`rooms/${roomCode}`),{log:arr});
+}
+function addLog(text,important=false){
+  const el=document.getElementById('action-log');
+  const d=document.createElement('div');
+  d.className='log-entry'+(important?' important':'');
+  d.textContent=text;el.appendChild(d);el.scrollTop=el.scrollHeight;
 }
 
-function addLog(text, important = false) {
-  const el = document.getElementById('action-log');
-  const d = document.createElement('div');
-  d.className = 'log-entry' + (important ? ' important' : '');
-  d.textContent = text;
-  el.appendChild(d);
-  el.scrollTop = el.scrollHeight;
-}
-
-// ─────── SLIDER / BET SIZING ───────
-let sliderMin = 0, sliderMax = 1000;
-
-function initSlider(state) {
-  const me = state.players?.[myId];
-  if (!me) return;
-  const currentBet = state.currentBet || 0;
-  const myBet = me.bet || 0;
-  const blind = state.blind || 10;
-  // [FIX #6] 最小レイズ幅は直前のレイズ幅以上
-  const lastRaiseSize = state.lastRaiseSize || blind;
-  sliderMin = currentBet + lastRaiseSize;
-  sliderMax = me.chips + myBet; // オールイン
-  sliderMin = Math.min(sliderMin, sliderMax);
-
-  const slider = document.getElementById('raise-slider');
-  slider.min = sliderMin;
-  slider.max = sliderMax;
-  slider.step = Math.max(1, blind);
-  slider.value = sliderMin;
-  document.getElementById('raise-input').value = sliderMin;
-  updateSliderDisplay(sliderMin, sliderMax, sliderMin);
-}
-
-function onSliderInput(el) {
-  const v = parseInt(el.value);
-  document.getElementById('raise-input').value = v;
-  updateSliderDisplay(sliderMin, sliderMax, v);
-}
-
-function updateSliderDisplay(min, max, val) {
-  document.getElementById('slider-value-display').textContent = val;
-  const slider = document.getElementById('raise-slider');
-  const pct = max === min ? 0 : ((val - min) / (max - min)) * 100;
-  slider.style.background = `linear-gradient(to right, var(--gold) ${pct.toFixed(1)}%, rgba(255,255,255,0.08) ${pct.toFixed(1)}%)`;
-}
-
-window.setSliderPreset = (preset) => {
-  const state = gameState;
-  if (!state) return;
-  const pot = state.pot || 0;
-  const me = state.players?.[myId];
-  if (!me) return;
-  let amount;
-  if (preset === 'min') {
-    amount = sliderMin;
-  } else if (preset >= 999) {
-    amount = sliderMax;
-  } else {
-    amount = Math.round(pot * preset) + (state.currentBet || 0);
-    amount = Math.max(amount, sliderMin);
-    amount = Math.min(amount, sliderMax);
-  }
-  const blind = state.blind || 10;
-  amount = Math.round(amount / Math.max(1, blind)) * Math.max(1, blind);
-  amount = Math.max(sliderMin, Math.min(sliderMax, amount));
-
-  const slider = document.getElementById('raise-slider');
-  slider.value = amount;
-  document.getElementById('raise-input').value = amount;
-  updateSliderDisplay(sliderMin, sliderMax, amount);
-};
-
-// ─────── DECK ───────
-function shuffleDeck() {
-  const suits = ['♠','♥','♣','♦'];
-  const ranks = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
-  const deck = [];
-  for (const s of suits) for (const r of ranks) deck.push(r + s);
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
+// ── DECK ──
+function shuffleDeck(){
+  const suits=['♠','♥','♣','♦'], ranks=['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+  const deck=[];
+  for(const s of suits)for(const r of ranks)deck.push(r+s);
+  for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   return deck;
 }
-
-function cardEmoji(card) {
-  if (!card) return '🂠';
-  const rank = card[0];
-  const suit = card[1];
-  return rank + suit;
+function cardEmoji(card){if(!card)return'🂠';return card[0]+card[1];}
+function buildCardEl(card,dealt=false,highlight=false){
+  const div=document.createElement('div');
+  const suit=card[1],rank=card[0],isRed=suit==='♥'||suit==='♦';
+  div.className='card'+(isRed?' red':' black')+(dealt?' dealt':'')+(highlight?' highlight':'');
+  const se={'♠':'♠️','♥':'♥️','♣':'♣️','♦':'♦️'}[suit]||suit;
+  div.innerHTML=`<div class="card-rank">${rank}</div><div class="card-suit">${se}</div>`;
+  return div;
 }
-
-function buildCardEl(card, dealt = false, highlight = false) {
-  const div = document.createElement('div');
-  const suit = card[1];
-  const rank = card[0];
-  const isRed = suit === '♥' || suit === '♦';
-  div.className = 'card' + (isRed ? ' red' : ' black') + (dealt ? ' dealt' : '') + (highlight ? ' highlight' : '');
-  const suitEmoji = { '♠':'♠️', '♥':'♥️', '♣':'♣️', '♦':'♦️' }[suit] || suit;
-  div.innerHTML = `<div class="card-rank">${rank}</div><div class="card-suit">${suitEmoji}</div>`;
+function buildMyCardEl(card,highlight=false){
+  const div=document.createElement('div');
+  const suit=card[1],rank=card[0],isRed=suit==='♥'||suit==='♦';
+  div.className='my-card'+(isRed?' red':' black')+(highlight?' highlight':'');
+  const se={'♠':'♠️','♥':'♥️','♣':'♣️','♦':'♦️'}[suit]||suit;
+  div.innerHTML=`<div class="card-rank">${rank}</div><div class="card-suit">${se}</div>`;
   return div;
 }
 
-function buildMyCardEl(card, highlight = false) {
-  const div = document.createElement('div');
-  const suit = card[1];
-  const rank = card[0];
-  const isRed = suit === '♥' || suit === '♦';
-  div.className = 'my-card' + (isRed ? ' red' : ' black') + (highlight ? ' highlight' : '');
-  const suitEmoji = { '♠':'♠️', '♥':'♥️', '♣':'♣️', '♦':'♦️' }[suit] || suit;
-  div.innerHTML = `<div class="card-rank">${rank}</div><div class="card-suit">${suitEmoji}</div>`;
-  return div;
-}
-
-// ─────── HAND EVALUATOR ───────
-function evaluateHand(cards) {
-  const rankMap = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14};
-  const parsed = cards.map(c => ({ rank: rankMap[c[0]], suit: c[1] }));
-  const n = parsed.length;
-
-  if (n < 2) return { rank: 0, name: 'ハイカード', tiebreakArr: [], usedIndices: new Set([0]) };
-
-  if (n === 2) {
-    const rc = {};
-    parsed.forEach(p => rc[p.rank] = (rc[p.rank]||0)+1);
-    const counts = Object.values(rc).sort((a,b)=>b-a);
-    if (counts[0] === 2) return { rank: 1, name: 'ポケットペア', tiebreakArr: [parsed[0].rank], usedIndices: new Set([0,1]) };
-    const suited = parsed[0].suit === parsed[1].suit;
-    const hi = Math.max(parsed[0].rank, parsed[1].rank);
-    const lo = Math.min(parsed[0].rank, parsed[1].rank);
-    const rankNames = {14:'A',13:'K',12:'Q',11:'J',10:'T'};
-    const rn = r => rankNames[r] || String(r);
-    return { rank: 0, name: rn(hi)+rn(lo)+(suited?'s':'o'), tiebreakArr: [hi, lo], usedIndices: new Set([0,1]) };
+// ── HAND EVALUATOR ──
+function evaluateHand(cards){
+  const rankMap={'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14};
+  const parsed=cards.map(c=>({rank:rankMap[c[0]],suit:c[1]}));
+  const n=parsed.length;
+  if(n<2)return{rank:0,name:'ハイカード',tiebreakArr:[],usedIndices:new Set([0])};
+  if(n===2){
+    const rc={};parsed.forEach(p=>rc[p.rank]=(rc[p.rank]||0)+1);
+    const counts=Object.values(rc).sort((a,b)=>b-a);
+    if(counts[0]===2)return{rank:1,name:'ポケットペア',tiebreakArr:[parsed[0].rank],usedIndices:new Set([0,1])};
+    const suited=parsed[0].suit===parsed[1].suit;
+    const hi=Math.max(parsed[0].rank,parsed[1].rank),lo=Math.min(parsed[0].rank,parsed[1].rank);
+    const rn=r=>({14:'A',13:'K',12:'Q',11:'J',10:'T'}[r]||String(r));
+    return{rank:0,name:rn(hi)+rn(lo)+(suited?'s':'o'),tiebreakArr:[hi,lo],usedIndices:new Set([0,1])};
   }
-
-  let best = null;
-  let bestIndices = null;
-
-  if (n <= 5) {
-    best = scoreHand(parsed);
-    bestIndices = new Set(Array.from({length:n},(_,i)=>i));
-  } else {
-    for (let i = 0; i < n; i++) {
-      for (let j = i+1; j < n; j++) {
-        const idxs = [];
-        const combo = [];
-        for (let k = 0; k < n; k++) {
-          if (k !== i && k !== j) { idxs.push(k); combo.push(parsed[k]); }
-        }
-        const h = scoreHand(combo);
-        if (!best || compareHands(h, best) > 0) {
-          best = h; bestIndices = new Set(idxs);
-        }
-      }
+  let best=null,bestIndices=null;
+  if(n<=5){best=scoreHand(parsed);bestIndices=new Set(Array.from({length:n},(_,i)=>i));}
+  else{
+    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){
+      const idxs=[],combo=[];
+      for(let k=0;k<n;k++){if(k!==i&&k!==j){idxs.push(k);combo.push(parsed[k]);}}
+      const h=scoreHand(combo);
+      if(!best||compareHands(h,best)>0){best=h;bestIndices=new Set(idxs);}
     }
   }
-  return { ...(best || { rank:0, name:'ハイカード', tiebreakArr:[] }), usedIndices: bestIndices || new Set() };
+  return{...(best||{rank:0,name:'ハイカード',tiebreakArr:[]}),usedIndices:bestIndices||new Set()};
 }
-
-// [FIX #8] 正確なタイブレーク比較関数
-function compareHands(a, b) {
-  if (a.rank !== b.rank) return a.rank - b.rank;
-  const aArr = a.tiebreakArr || [];
-  const bArr = b.tiebreakArr || [];
-  for (let i = 0; i < Math.max(aArr.length, bArr.length); i++) {
-    const diff = (aArr[i] || 0) - (bArr[i] || 0);
-    if (diff !== 0) return diff;
-  }
+function compareHands(a,b){
+  if(a.rank!==b.rank)return a.rank-b.rank;
+  const aA=a.tiebreakArr||[],bA=b.tiebreakArr||[];
+  for(let i=0;i<Math.max(aA.length,bA.length);i++){const d=(aA[i]||0)-(bA[i]||0);if(d!==0)return d;}
   return 0;
 }
-
-function scoreHand(cards) {
-  // [FIX #8] tiebreakArrで正確な比較：役のランク → キッカーの順
-  const ranks = cards.map(c => c.rank).sort((a,b) => b-a);
-  const suits = cards.map(c => c.suit);
-  const rankCounts = {};
-  ranks.forEach(r => rankCounts[r] = (rankCounts[r]||0)+1);
-  // グループをカウント降順・ランク降順でソート
-  const groups = Object.entries(rankCounts)
-    .map(([r, cnt]) => ({ r: parseInt(r), cnt }))
-    .sort((a, b) => b.cnt - a.cnt || b.r - a.r);
-  const counts = groups.map(g => g.cnt);
-  const flush = suits.every(s => s === suits[0]);
-  const isWheel = ranks[0]===14 && ranks[1]===5 && ranks[2]===4 && ranks[3]===3 && ranks[4]===2;
-  const straight = (ranks[0]-ranks[4]===4 && new Set(ranks).size===5) || isWheel;
-
-  // tiebreakArr: グループのランクを優先順に並べる（強い役から弱い役へ）
-  const tiebreakArr = groups.map(g => g.r);
-
-  if (flush && straight) return { rank: 8, name: 'ストレートフラッシュ', tiebreakArr: isWheel ? [5] : [ranks[0]] };
-  if (counts[0]===4) return { rank: 7, name: 'フォーカード', tiebreakArr };
-  if (counts[0]===3 && counts[1]===2) return { rank: 6, name: 'フルハウス', tiebreakArr };
-  if (flush) return { rank: 5, name: 'フラッシュ', tiebreakArr: ranks };
-  if (straight) return { rank: 4, name: 'ストレート', tiebreakArr: isWheel ? [5] : [ranks[0]] };
-  if (counts[0]===3) return { rank: 3, name: 'スリーカード', tiebreakArr };
-  if (counts[0]===2 && counts[1]===2) return { rank: 2, name: 'ツーペア', tiebreakArr };
-  if (counts[0]===2) return { rank: 1, name: 'ワンペア', tiebreakArr };
-  return { rank: 0, name: 'ハイカード', tiebreakArr: ranks };
+function scoreHand(cards){
+  const ranks=cards.map(c=>c.rank).sort((a,b)=>b-a);
+  const suits=cards.map(c=>c.suit);
+  const rankCounts={};ranks.forEach(r=>rankCounts[r]=(rankCounts[r]||0)+1);
+  const groups=Object.entries(rankCounts).map(([r,cnt])=>({r:parseInt(r),cnt})).sort((a,b)=>b.cnt-a.cnt||b.r-a.r);
+  const counts=groups.map(g=>g.cnt);
+  const flush=suits.every(s=>s===suits[0]);
+  const isWheel=ranks[0]===14&&ranks[1]===5&&ranks[2]===4&&ranks[3]===3&&ranks[4]===2;
+  const straight=(ranks[0]-ranks[4]===4&&new Set(ranks).size===5)||isWheel;
+  const tiebreakArr=groups.map(g=>g.r);
+  if(flush&&straight)return{rank:8,name:'ストレートフラッシュ',tiebreakArr:isWheel?[5]:[ranks[0]]};
+  if(counts[0]===4)return{rank:7,name:'フォーカード',tiebreakArr};
+  if(counts[0]===3&&counts[1]===2)return{rank:6,name:'フルハウス',tiebreakArr};
+  if(flush)return{rank:5,name:'フラッシュ',tiebreakArr:ranks};
+  if(straight)return{rank:4,name:'ストレート',tiebreakArr:isWheel?[5]:[ranks[0]]};
+  if(counts[0]===3)return{rank:3,name:'スリーカード',tiebreakArr};
+  if(counts[0]===2&&counts[1]===2)return{rank:2,name:'ツーペア',tiebreakArr};
+  if(counts[0]===2)return{rank:1,name:'ワンペア',tiebreakArr};
+  return{rank:0,name:'ハイカード',tiebreakArr:ranks};
 }
 
-// [FIX #9] ユニークコード生成（衝突チェック付き）
-async function genUniqueCode() {
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const code = Math.random().toString(36).slice(2,6).toUpperCase();
-    const snap = await get(ref(db, 'rooms/' + code));
-    if (!snap.exists()) return code;
+// ── UTILS ──
+async function genUniqueCode(){
+  for(let i=0;i<10;i++){
+    const code=Math.random().toString(36).slice(2,6).toUpperCase();
+    const snap=await get(ref(db,'rooms/'+code));
+    if(!snap.exists())return code;
   }
-  // フォールバック: タイムスタンプベース
   return Date.now().toString(36).slice(-4).toUpperCase();
 }
-
-// ─────── HELPERS ───────
-function phaseLabel(p) {
-  return { waiting:'待機中', preflop:'プリフロップ', flop:'フロップ', turn:'ターン', river:'リバー', showdown:'ショーダウン' }[p] || p;
+function phaseLabel(p){return{waiting:'待機中',preflop:'プリフロップ',flop:'フロップ',turn:'ターン',river:'リバー',showdown:'ショーダウン'}[p]||p;}
+function statusLabel(s,phase){
+  if(phase==='waiting')return'';
+  return{active:'▶ 待機',folded:'フォールド',allin:'ALL IN',winner:'🏆 WIN',left:'退室',eliminated:'敗退'}[s]||'';
 }
-function statusLabel(s, phase) {
-  if (phase === 'waiting') return '';
-  return { active: '▶ 待機', folded: 'フォールド', allin: 'ALL IN', winner: '🏆 WIN', left: '退室', eliminated: '敗退' }[s] || '';
-}
-function esc(s) {
-  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
-}
-function showLobbyError(msg) {
-  const el = document.getElementById('lobby-error');
-  el.textContent = msg; el.classList.remove('hidden');
-  setTimeout(() => el.classList.add('hidden'), 3000);
-}
-function showWaitingError(msg) {
-  const el = document.getElementById('waiting-error');
-  el.textContent = msg; el.classList.remove('hidden');
-  setTimeout(() => el.classList.add('hidden'), 3000);
-}
-function showWaitingRoom() {
-  document.getElementById('lobby-main').classList.add('hidden');
-  document.getElementById('waiting-room').classList.remove('hidden');
-  document.getElementById('room-code-display').textContent = roomCode;
-}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function showLobbyError(msg){const el=document.getElementById('lobby-error');el.textContent=msg;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),3000);}
+function showWaitingError(msg){const el=document.getElementById('waiting-error');el.textContent=msg;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),3000);}
+function showWaitingRoom(){document.getElementById('lobby-main').classList.add('hidden');document.getElementById('waiting-room').classList.remove('hidden');document.getElementById('room-code-display').textContent=roomCode;}
 </script>
 </body>
 </html>
