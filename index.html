@@ -311,11 +311,14 @@ import { getDatabase, ref, set, get, update, onValue, off, serverTimestamp, runT
 let db=null, app=null;
 let myId=null, myName='', roomCode='';
 let isHost=false;
-let roomRef=null, unsubscribe=null, unsubHand=null;
+let roomRef=null, unsubRoom=null, unsubHand=null;
 let gameState=null, myHand=null;
 
 // bet UI state
 let betMin=0, betMax=1000, betStep=10, currentBetVal=0;
+
+// ホスト委譲処理の二重実行防止フラグ
+let hostDelegationInProgress=false;
 
 // ── FIREBASE ──
 const firebaseConfig = {
@@ -363,7 +366,7 @@ window.joinRoom = async()=>{
 };
 
 window.leaveRoom = async()=>{
-  if(roomRef&&myId){
+  if(db&&myId&&roomCode){
     try{
       if(isHost){
         const snap=await get(ref(db,`rooms/${roomCode}/players`));
@@ -377,7 +380,7 @@ window.leaveRoom = async()=>{
       await update(ref(db,`rooms/${roomCode}/players/${myId}`),{status:'left'});
     }catch(e){}
   }
-  if(unsubscribe){unsubscribe();unsubscribe=null;}
+  if(unsubRoom){unsubRoom();unsubRoom=null;}
   if(unsubHand){unsubHand();unsubHand=null;}
   location.reload();
 };
@@ -453,10 +456,12 @@ async function dealRound(dealerIdx){
     const{hand:_h,...rest}=players[id];
     newPlayers[id]={...rest,chips,bet,status};
   });
+  // 非アクティブプレイヤー（退室・敗退）はそのまま保持
   Object.keys(players).forEach(id=>{
     if(!newPlayers[id]){const{hand:_h,...rest}=players[id];newPlayers[id]={...rest,status:players[id].status};}
   });
 
+  // ハンドをDBに保存（/hands/ 以下に格納）
   const handUpdates={};
   activeIds.forEach(id=>{ handUpdates[`rooms/${roomCode}/hands/${id}`]=hands[id]; });
   await update(ref(db),handUpdates);
@@ -475,29 +480,37 @@ async function dealRound(dealerIdx){
     dealerIndex:dealerSeat, sbIndex:sbSeat, bbIndex:bbSeat,
     turnIndex:fa, turnOrder:activeIds,
     bbHasOption:true, log:[], roundLock:false,
+    instantWin:null, phaseAdvanceNeeded:false,
   });
   await addLogDB(`新ラウンド開始 — ディーラー: ${players[activeIds[dealerSeat]].name}`);
   await addLogDB(`SB: ${players[activeIds[sbSeat]].name} (${Math.floor(blind/2)}), BB: ${players[activeIds[bbSeat]].name} (${blind})`);
 }
 
-// ── SUBSCRIBE ──
+// ── SUBSCRIBE (1つだけ定義) ──
 function subscribeRoom(){
-  if(unsubscribe)unsubscribe();
-  if(unsubHand)unsubHand();
+  if(unsubRoom){unsubRoom();unsubRoom=null;}
+  if(unsubHand){unsubHand();unsubHand=null;}
+
   const r=ref(db,'rooms/'+roomCode);
   const handler=onValue(r,snap=>{
     if(!snap.exists())return;
     gameState=snap.val();
+    // ホスト引き継ぎ
     if(gameState.host===myId&&!isHost)isHost=true;
+    // ショーダウン時に相手のハンドを表示用にマージ
     if(gameState.showdownHands){
       Object.entries(gameState.showdownHands).forEach(([id,hand])=>{
         if(gameState.players?.[id])gameState.players[id].hand=hand;
       });
     }
+    // 自分のハンドをローカルからマージ（DBの /hands/ は秘匿）
     if(myHand&&gameState.players?.[myId])gameState.players[myId].hand=myHand;
+    // ホスト委譲処理
+    handleHostDelegation(gameState);
     renderGame(gameState);
   });
-  unsubscribe=()=>off(r,'value',handler);
+  unsubRoom=()=>off(r,'value',handler);
+
   const hr=ref(db,`rooms/${roomCode}/hands/${myId}`);
   const hh=onValue(hr,snap=>{
     if(!snap.exists())return;
@@ -505,6 +518,27 @@ function subscribeRoom(){
     if(gameState?.players?.[myId]){gameState.players[myId].hand=myHand;renderGame(gameState);}
   });
   unsubHand=()=>off(hr,'value',hh);
+}
+
+// ── ホスト委譲処理（二重実行防止付き） ──
+function handleHostDelegation(state){
+  if(!isHost||hostDelegationInProgress)return;
+  if(state.phase==='showdown'||state.phase==='tournament_end')return;
+
+  // 即決着フラグ
+  if(state.instantWin){
+    hostDelegationInProgress=true;
+    endRound(state,[state.instantWin]).finally(()=>{ hostDelegationInProgress=false; });
+    return;
+  }
+  // フェーズ進行フラグ
+  if(state.phaseAdvanceNeeded){
+    hostDelegationInProgress=true;
+    // フラグを先にクリアしてから実行（二重実行防止）
+    update(ref(db,`rooms/${roomCode}`),{phaseAdvanceNeeded:false})
+      .then(()=>advancePhase(state))
+      .finally(()=>{ hostDelegationInProgress=false; });
+  }
 }
 
 // ── RENDER ──
@@ -666,8 +700,9 @@ function initBetUI(state){
   const blind=state.blind||10;
   const lastRaiseSize=state.lastRaiseSize||blind;
   betStep=blind;
-  betMin=Math.min(currentBet+lastRaiseSize, me.chips+myBet); // オールイン以下に収める
-  betMax=me.chips+myBet; // オールイン
+  // 最低レイズ = 現在のベット + 前回のレイズサイズ、ただしオールイン以下に収める
+  betMin=Math.min(currentBet+lastRaiseSize, myBet+me.chips);
+  betMax=myBet+me.chips; // オールイン
   currentBetVal=betMin;
 
   const slider=document.getElementById('raise-slider');
@@ -697,7 +732,6 @@ window.onSlider=function(el){
 };
 
 window.adjustBet=function(dir){
-  // ブラインド単位で±1
   currentBetVal=Math.max(betMin,Math.min(betMax,currentBetVal+dir*betStep));
   updateBetDisplay();
 };
@@ -729,10 +763,11 @@ async function _doPlayerAction(action){
   if(turnOrder[turnIndex]!==myId)return;
   const me=state.players[myId];
   const currentBet=state.currentBet||0, myBet=me.bet||0, toCall=currentBet-myBet;
-  let updates={}, logText='', isRaise=false;
+  let logText='', isRaise=false;
 
   if(action==='fold'){
-    updates[`rooms/${roomCode}/players/${myId}/status`]='folded';
+    // フォールドは先にDBへ書き込んでからターン進行
+    await update(ref(db),{[`rooms/${roomCode}/players/${myId}/status`]:'folded'});
     logText=`${myName} フォールド`;
 
   }else if(action==='check'){
@@ -742,16 +777,21 @@ async function _doPlayerAction(action){
   }else if(action==='call'){
     const amount=Math.min(toCall,me.chips);
     const newChips=me.chips-amount, newBet=myBet+amount;
-    updates[`rooms/${roomCode}/players/${myId}/chips`]=newChips;
-    updates[`rooms/${roomCode}/players/${myId}/bet`]=newBet;
-    if(newChips===0){updates[`rooms/${roomCode}/players/${myId}/status`]='allin';logText=`${myName} オールイン！(${newBet})`;}
-    else logText=`${myName} コール (${newBet})`;
-    await update(ref(db),updates); updates={};
+    const callUpdates={
+      [`rooms/${roomCode}/players/${myId}/chips`]:newChips,
+      [`rooms/${roomCode}/players/${myId}/bet`]:newBet,
+    };
+    if(newChips===0){
+      callUpdates[`rooms/${roomCode}/players/${myId}/status`]='allin';
+      logText=`${myName} オールイン！(${newBet})`;
+    }else{
+      logText=`${myName} コール (${newBet})`;
+    }
+    await update(ref(db),callUpdates);
     await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+amount);
 
   }else if(action==='raise'){
     const raiseAmount=currentBetVal;
-    // 金額不足チェック
     if(raiseAmount<betMin){
       const w=document.getElementById('bet-warning');
       w.classList.add('show');
@@ -760,42 +800,41 @@ async function _doPlayerAction(action){
     }
     const totalBet=raiseAmount, totalPay=totalBet-myBet;
     if(totalPay>=me.chips){
-      // All in
+      // オールイン
       const allInBet=myBet+me.chips, paid=me.chips;
-      updates[`rooms/${roomCode}/players/${myId}/chips`]=0;
-      updates[`rooms/${roomCode}/players/${myId}/bet`]=allInBet;
-      updates[`rooms/${roomCode}/players/${myId}/status`]='allin';
+      const raiseUpdates={
+        [`rooms/${roomCode}/players/${myId}/chips`]:0,
+        [`rooms/${roomCode}/players/${myId}/bet`]:allInBet,
+        [`rooms/${roomCode}/players/${myId}/status`]:'allin',
+        [`rooms/${roomCode}/bbHasOption`]:false,
+      };
       if(allInBet>currentBet){
-        updates[`rooms/${roomCode}/currentBet`]=allInBet;
-        updates[`rooms/${roomCode}/lastRaiseSize`]=allInBet-currentBet;
+        raiseUpdates[`rooms/${roomCode}/currentBet`]=allInBet;
+        raiseUpdates[`rooms/${roomCode}/lastRaiseSize`]=allInBet-currentBet;
       }
-      updates[`rooms/${roomCode}/bbHasOption`]=false;
       logText=`${myName} オールイン！(${allInBet})`; isRaise=true;
-      await update(ref(db),updates); updates={};
+      await update(ref(db),raiseUpdates);
       await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+paid);
     }else{
-      updates[`rooms/${roomCode}/players/${myId}/chips`]=me.chips-totalPay;
-      updates[`rooms/${roomCode}/players/${myId}/bet`]=totalBet;
-      updates[`rooms/${roomCode}/currentBet`]=totalBet;
-      updates[`rooms/${roomCode}/lastRaiseSize`]=totalBet-currentBet;
-      updates[`rooms/${roomCode}/bbHasOption`]=false;
+      const raiseUpdates={
+        [`rooms/${roomCode}/players/${myId}/chips`]:me.chips-totalPay,
+        [`rooms/${roomCode}/players/${myId}/bet`]:totalBet,
+        [`rooms/${roomCode}/currentBet`]:totalBet,
+        [`rooms/${roomCode}/lastRaiseSize`]:totalBet-currentBet,
+        [`rooms/${roomCode}/bbHasOption`]:false,
+      };
       logText=`${myName} レイズ → ${totalBet}`; isRaise=true;
-      await update(ref(db),updates); updates={};
-      await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+totalPay);
+      await update(ref(db),raiseUpdates);
+      await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+(totalPay));
     }
   }
 
-  if(Object.keys(updates).length)await update(ref(db),updates);
   await advanceTurn(action,logText,isRaise);
 }
 
 // ── ADVANCE TURN ──
-// BUG FIX①: DBから最新stateを取得して判定 → 問題は「自分のアクション分がDBに反映される前に読む」こと
-// 対策: アクションの書き込みが完了してからadvanceTurnを呼んでいるので、
-//        ここで再度DBから読み直す際に最新値が得られる。
-//        さらに、自分のアクション結果をローカルで上書きして判定することで整合性を保つ。
 async function advanceTurn(action, logText, isRaise){
-  // DBから最新状態を取得
+  // アクション書き込み完了後にDBから最新状態を取得
   const snap=await get(ref(db,`rooms/${roomCode}`));
   const state=snap.val();
   const turnOrder=state.turnOrder;
@@ -809,31 +848,30 @@ async function advanceTurn(action, logText, isRaise){
   if(currentLog.length>20)currentLog.splice(0,currentLog.length-20);
   await update(ref(db,`rooms/${roomCode}`),{log:currentLog});
 
-  // フォールド後に1人だけ残っているか判定
+  // フォールド後に残りプレイヤーが1人かチェック
   const notFolded=turnOrder.filter(id=>{
     const p=players[id];
     return p&&p.status!=='folded'&&p.status!=='left';
   });
   if(notFolded.length===1){
-    // BUG FIX②: ホストのみendRoundを実行するが、非ホストがフォールドした場合も
-    // ホストへ「即決着」シグナルをDBに書き込んで、ホスト側のonValueで処理させる
     if(isHost){
       await endRound(state,notFolded);
-    } else {
-      // 非ホスト: DBにinstantWinフラグを書いてホストに委ねる
+    }else{
+      // 非ホスト: instantWinフラグをセットしてホストに委ねる
       await update(ref(db,`rooms/${roomCode}`),{instantWin:notFolded[0]});
     }
     return;
   }
 
   const currentBet=state.currentBet||0;
+  // 全員がベット済みか（フォールド・オールイン・退室は除外）
   const allSettled=turnOrder.every(id=>{
     const p=players[id];
     if(!p||p.status==='folded'||p.status==='left'||p.status==='allin')return true;
     return p.bet===currentBet;
   });
 
-  // BBオプション (preflop: 全員コール時にBBがチェック/レイズできる)
+  // BBオプション: プリフロップで全員コール時にBBがチェック/レイズできる
   const bbId=turnOrder[bbIndex];
   const bbHasOption=state.bbHasOption&&state.phase==='preflop'&&bbId;
 
@@ -842,10 +880,10 @@ async function advanceTurn(action, logText, isRaise){
       await update(ref(db,`rooms/${roomCode}`),{turnIndex:bbIndex,bbHasOption:false});
       return;
     }
-    // BUG FIX①: フェーズ進行もホストのみが実行
     if(isHost){
       await advancePhase(state);
-    } else {
+    }else{
+      // フラグをセットしてホストに委譲（phaseAdvanceNeededはhandleHostDelegationでクリア）
       await update(ref(db,`rooms/${roomCode}`),{phaseAdvanceNeeded:true});
     }
     return;
@@ -884,7 +922,7 @@ async function advancePhase(state){
   updates[`rooms/${roomCode}/bbHasOption`]=false;
   updates[`rooms/${roomCode}/phaseAdvanceNeeded`]=false;
 
-  // ディーラー次のアクティブプレイヤー
+  // ディーラー次のアクティブプレイヤーをファーストアクターに
   let firstActor=(dealerIdx+1)%n;
   for(let i=0;i<n;i++){
     if(players[turnOrder[firstActor]]?.status==='active')break;
@@ -896,14 +934,17 @@ async function advancePhase(state){
   if(phase==='preflop'){
     const flop=[deck.shift(),deck.shift(),deck.shift()];
     if(activeCount<=1){
+      // 全員オールイン: ターン・リバーも一気に開く
       const turn=deck.shift(), river=deck.shift();
-      updates[`rooms/${roomCode}/community`]=[...flop,turn,river];
+      const fullComm=[...flop,turn,river];
+      updates[`rooms/${roomCode}/community`]=fullComm;
       updates[`rooms/${roomCode}/deck`]=deck;
       updates[`rooms/${roomCode}/phase`]='river';
       updates[`rooms/${roomCode}/turnIndex`]=firstActor;
       await update(ref(db),updates);
       await addLogDB('── フロップ/ターン/リバー (オールイン) ──');
-      await endRound({...state,phase:'river',community:fullComm,players,deck},null);
+      // 最新stateにコミュニティカードをマージしてendRoundへ
+      await endRound({...state,phase:'river',community:fullComm},null);
     }else{
       updates[`rooms/${roomCode}/community`]=flop;
       updates[`rooms/${roomCode}/deck`]=deck;
@@ -956,14 +997,14 @@ async function endRound(state,forcedWinners){
       if(!bestScore||compareHands(result,bestScore)>0){bestScore=result;winnerIds=[id];}
       else if(compareHands(result,bestScore)===0)winnerIds.push(id);
     });
+    // ショーダウン用に全員のハンドを公開
     const sdUpdate={};
     notFolded.forEach(id=>{ sdUpdate[`rooms/${roomCode}/showdownHands/${id}`]=allHands[id]; });
     await update(ref(db),sdUpdate);
   }
 
-  // BUG FIX②: winnerIdsが空の場合のガード
+  // 勝者が空の場合のフォールバック（安全策）
   if(winnerIds.length===0){
-    // フォールドしていない全員を勝者にする（安全策）
     const fallback=turnOrder.filter(id=>{
       const p=players[id];
       return p&&p.status!=='folded'&&p.status!=='left';
@@ -1002,53 +1043,6 @@ async function endRound(state,forcedWinners){
     await update(ref(db,`rooms/${roomCode}`),{phase:'tournament_end',champion:alive[0][0]});
     await addLogDB(`🎉 ${alive[0][1].name} がトーナメント優勝！`,true);
   }
-}
-
-// ── ホスト側: DBフラグを監視して処理を引き受ける ──
-// subscribeRoom内のonValueで gameState が更新されるたびに呼ばれる renderGame の中で
-// isHost かつフラグが立っていれば実行する形に統合
-const _origRenderGame=window._renderGameHook;
-// onValueハンドラ内でホスト委譲処理を追加
-function handleHostDelegation(state){
-  if(!isHost)return;
-  // 即決着フラグ
-  if(state.instantWin&&state.phase!=='showdown'&&state.phase!=='tournament_end'){
-    const winner=state.instantWin;
-    endRound(state,[winner]);
-    return;
-  }
-  // フェーズ進行フラグ
-  if(state.phaseAdvanceNeeded&&state.phase!=='showdown'&&state.phase!=='tournament_end'){
-    advancePhase(state);
-  }
-}
-
-// subscribeRoom を再定義してhook挿入
-function subscribeRoom(){
-  if(unsubscribe)unsubscribe();
-  if(unsubHand)unsubHand();
-  const r=ref(db,'rooms/'+roomCode);
-  const handler=onValue(r,snap=>{
-    if(!snap.exists())return;
-    gameState=snap.val();
-    if(gameState.host===myId&&!isHost)isHost=true;
-    if(gameState.showdownHands){
-      Object.entries(gameState.showdownHands).forEach(([id,hand])=>{
-        if(gameState.players?.[id])gameState.players[id].hand=hand;
-      });
-    }
-    if(myHand&&gameState.players?.[myId])gameState.players[myId].hand=myHand;
-    handleHostDelegation(gameState);
-    renderGame(gameState);
-  });
-  unsubscribe=()=>off(r,'value',handler);
-  const hr=ref(db,`rooms/${roomCode}/hands/${myId}`);
-  const hh=onValue(hr,snap=>{
-    if(!snap.exists())return;
-    myHand=snap.val();
-    if(gameState?.players?.[myId]){gameState.players[myId].hand=myHand;renderGame(gameState);}
-  });
-  unsubHand=()=>off(hr,'value',hh);
 }
 
 // ── LOG ──
