@@ -454,7 +454,9 @@ async function dealRound(dealerIdx){
     if(i===bbSeat){ const bb=Math.min(blind,chips); bet=bb;chips-=bb;potFromBlinds+=bb; }
     if(chips===0)status='allin';
     const{hand:_h,...rest}=players[id];
-    newPlayers[id]={...rest,chips,bet,status};
+    // actedThisRound: SB/BBはブラインド投入済みとしてtrue
+    const acted=(i===sbSeat||i===bbSeat);
+    newPlayers[id]={...rest,chips,bet,status,actedThisRound:acted};
   });
   // 非アクティブプレイヤー（退室・敗退）はそのまま保持
   Object.keys(players).forEach(id=>{
@@ -767,11 +769,13 @@ async function _doPlayerAction(action){
 
   if(action==='fold'){
     // フォールドは先にDBへ書き込んでからターン進行
-    await update(ref(db),{[`rooms/${roomCode}/players/${myId}/status`]:'folded'});
+    await update(ref(db),{[`rooms/${roomCode}/players/${myId}/status`]:'folded',[`rooms/${roomCode}/players/${myId}/actedThisRound`]:true});
     logText=`${myName} フォールド`;
 
   }else if(action==='check'){
     if(toCall>0)return;
+    // チェックもアクション済みとしてDBに記録
+    await update(ref(db),{[`rooms/${roomCode}/players/${myId}/actedThisRound`]:true});
     logText=`${myName} チェック`;
 
   }else if(action==='call'){
@@ -780,6 +784,7 @@ async function _doPlayerAction(action){
     const callUpdates={
       [`rooms/${roomCode}/players/${myId}/chips`]:newChips,
       [`rooms/${roomCode}/players/${myId}/bet`]:newBet,
+      [`rooms/${roomCode}/players/${myId}/actedThisRound`]:true,
     };
     if(newChips===0){
       callUpdates[`rooms/${roomCode}/players/${myId}/status`]='allin';
@@ -806,6 +811,7 @@ async function _doPlayerAction(action){
         [`rooms/${roomCode}/players/${myId}/chips`]:0,
         [`rooms/${roomCode}/players/${myId}/bet`]:allInBet,
         [`rooms/${roomCode}/players/${myId}/status`]:'allin',
+        [`rooms/${roomCode}/players/${myId}/actedThisRound`]:true,
         [`rooms/${roomCode}/bbHasOption`]:false,
       };
       if(allInBet>currentBet){
@@ -814,6 +820,17 @@ async function _doPlayerAction(action){
       }
       logText=`${myName} オールイン！(${allInBet})`; isRaise=true;
       await update(ref(db),raiseUpdates);
+      // オールインレイズ後: ベットが上がった場合は他のactiveプレイヤーのactedThisRoundをリセット
+      if(allInBet>currentBet){
+        const resetUpdates2={};
+        const snap3=await get(ref(db,`rooms/${roomCode}/players`));
+        const ps2=snap3.val()||{};
+        Object.keys(ps2).forEach(id=>{
+          if(id!==myId&&ps2[id].status==='active')
+            resetUpdates2[`rooms/${roomCode}/players/${id}/actedThisRound`]=false;
+        });
+        if(Object.keys(resetUpdates2).length) await update(ref(db),resetUpdates2);
+      }
       await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+paid);
     }else{
       const raiseUpdates={
@@ -822,9 +839,19 @@ async function _doPlayerAction(action){
         [`rooms/${roomCode}/currentBet`]:totalBet,
         [`rooms/${roomCode}/lastRaiseSize`]:totalBet-currentBet,
         [`rooms/${roomCode}/bbHasOption`]:false,
+        [`rooms/${roomCode}/players/${myId}/actedThisRound`]:true,
       };
       logText=`${myName} レイズ → ${totalBet}`; isRaise=true;
       await update(ref(db),raiseUpdates);
+      // レイズ後は他のプレイヤーのactedThisRoundをリセット（再度アクションが必要）
+      const resetUpdates={};
+      const snap2=await get(ref(db,`rooms/${roomCode}/players`));
+      const ps=snap2.val()||{};
+      Object.keys(ps).forEach(id=>{
+        if(id!==myId&&ps[id].status==='active')
+          resetUpdates[`rooms/${roomCode}/players/${id}/actedThisRound`]=false;
+      });
+      if(Object.keys(resetUpdates).length) await update(ref(db),resetUpdates);
       await runTransaction(ref(db,`rooms/${roomCode}/pot`),p=>(p||0)+(totalPay));
     }
   }
@@ -864,11 +891,12 @@ async function advanceTurn(action, logText, isRaise){
   }
 
   const currentBet=state.currentBet||0;
-  // 全員がベット済みか（フォールド・オールイン・退室は除外）
+  // 全員がアクション済み かつ ベット額が揃っているか
+  // actedThisRound=trueでないプレイヤーがいれば未アクション扱い
   const allSettled=turnOrder.every(id=>{
     const p=players[id];
     if(!p||p.status==='folded'||p.status==='left'||p.status==='allin')return true;
-    return p.bet===currentBet;
+    return p.bet===currentBet && p.actedThisRound===true;
   });
 
   // BBオプション: プリフロップで全員コール時にBBがチェック/レイズできる
@@ -911,11 +939,13 @@ async function advancePhase(state){
   const dealerIdx=state.dealerIndex??0, n=turnOrder.length;
   const updates={};
 
-  // ベットリセット
+  // ベットリセット＆actedThisRoundリセット
   turnOrder.forEach(id=>{
     const p=players[id];
-    if(p&&p.status!=='folded'&&p.status!=='left')
+    if(p&&p.status!=='folded'&&p.status!=='left'){
       updates[`rooms/${roomCode}/players/${id}/bet`]=0;
+      updates[`rooms/${roomCode}/players/${id}/actedThisRound`]=false;
+    }
   });
   updates[`rooms/${roomCode}/currentBet`]=0;
   updates[`rooms/${roomCode}/lastRaiseSize`]=state.blind||10;
@@ -1069,13 +1099,15 @@ function shuffleDeck(){
   for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
   return deck;
 }
-function cardEmoji(card){if(!card)return'🂠';return card[0]+card[1];}
+// カード内部コード('T')を表示用文字('10')に変換
+function displayRank(r){ return r==='T'?'10':r; }
+function cardEmoji(card){if(!card)return'🂠';return displayRank(card[0])+card[1];}
 function buildCardEl(card,dealt=false,highlight=false){
   const div=document.createElement('div');
   const suit=card[1],rank=card[0],isRed=suit==='♥'||suit==='♦';
   div.className='card'+(isRed?' red':' black')+(dealt?' dealt':'')+(highlight?' highlight':'');
   const se={'♠':'♠️','♥':'♥️','♣':'♣️','♦':'♦️'}[suit]||suit;
-  div.innerHTML=`<div class="card-rank">${rank}</div><div class="card-suit">${se}</div>`;
+  div.innerHTML=`<div class="card-rank">${displayRank(rank)}</div><div class="card-suit">${se}</div>`;
   return div;
 }
 function buildMyCardEl(card,highlight=false){
@@ -1083,7 +1115,7 @@ function buildMyCardEl(card,highlight=false){
   const suit=card[1],rank=card[0],isRed=suit==='♥'||suit==='♦';
   div.className='my-card'+(isRed?' red':' black')+(highlight?' highlight':'');
   const se={'♠':'♠️','♥':'♥️','♣':'♣️','♦':'♦️'}[suit]||suit;
-  div.innerHTML=`<div class="card-rank">${rank}</div><div class="card-suit">${se}</div>`;
+  div.innerHTML=`<div class="card-rank">${displayRank(rank)}</div><div class="card-suit">${se}</div>`;
   return div;
 }
 
@@ -1099,7 +1131,7 @@ function evaluateHand(cards){
     if(counts[0]===2)return{rank:1,name:'ポケットペア',tiebreakArr:[parsed[0].rank],usedIndices:new Set([0,1])};
     const suited=parsed[0].suit===parsed[1].suit;
     const hi=Math.max(parsed[0].rank,parsed[1].rank),lo=Math.min(parsed[0].rank,parsed[1].rank);
-    const rn=r=>({14:'A',13:'K',12:'Q',11:'J',10:'T'}[r]||String(r));
+    const rn=r=>({14:'A',13:'K',12:'Q',11:'J',10:'10'}[r]||String(r));
     return{rank:0,name:rn(hi)+rn(lo)+(suited?'s':'o'),tiebreakArr:[hi,lo],usedIndices:new Set([0,1])};
   }
   let best=null,bestIndices=null;
